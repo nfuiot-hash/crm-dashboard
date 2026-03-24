@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM 管理儀表板</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root{--bg:#07111f;--panel:#0f1c2f;--line:#1f3b60;--text:#e9f2ff;--muted:#88a4c9;--gold:#ffb938;--teal:#14d5c1;--cyan:#46a6ff;--purple:#9b7bff;--green:#1ee28b;--red:#ff6687;--orange:#ff914d}
+    *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#08111d,#091423);color:var(--text);font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif}
+    .wrap{width:min(1440px,calc(100vw - 24px));margin:0 auto;padding:16px 0 28px}.card{background:#0f1c2ff5;border:1px solid var(--line);border-radius:20px;box-shadow:0 18px 40px rgba(0,0,0,.25)}
+    .top{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:18px 20px;margin-bottom:14px}.brand{display:flex;gap:12px;align-items:center}.mark{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:#173250;color:var(--gold);font-size:22px}.top h1{margin:0;font-size:22px}.meta,.sub{color:var(--muted);font-size:12px}
+    .actions,.tabs,.chips,.raw-tabs{display:flex;gap:8px;flex-wrap:wrap}.tabs button,.ghost,.chip,.raw-tabs button{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:9px 14px;font-weight:700;cursor:pointer}.tabs button.active,.chip.active,.raw-tabs button.active{background:linear-gradient(135deg,var(--gold),#ff9340);color:#07111f;border-color:transparent}
+    .filters{padding:18px;margin-bottom:14px}.grid{display:grid;grid-template-columns:1.5fr repeat(5,1fr) 1fr 1fr;gap:12px;align-items:end}.field{display:flex;flex-direction:column;gap:6px}.field label,.quick .label{font-size:12px;color:var(--muted);font-weight:700}
+    input,select{width:100%;padding:12px 14px;border-radius:14px;border:1px solid #2e5485;background:#10213a;color:var(--text);outline:none}input:focus,select:focus{border-color:var(--teal)}
+    .quick{margin-top:12px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.result{text-align:right}.result b{display:block;font-size:38px;color:var(--gold);line-height:1}
+    .kpis{display:grid;grid-template-columns:repeat(8,1fr);gap:12px;margin-bottom:14px}.kpi{padding:16px;border-radius:18px;border:1px solid var(--line);border-top:3px solid var(--accent);background:#0f1c2ff5}.kpi .v{font-size:24px;font-weight:900;color:var(--accent)}.kpi .t,.kpi .d{font-size:12px;color:var(--muted)}.kpi .i{font-size:20px;margin-bottom:8px}
+    .section{display:none}.section.active{display:block}.overview{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}.panel{padding:16px}.panel h3{margin:0 0 12px;font-size:16px}.hint{font-size:12px;color:var(--muted);margin-left:6px}
+    .bars,.tiers{display:grid;gap:12px}.bar{display:grid;gap:6px}.bar-h{display:flex;justify-content:space-between;font-size:13px}.track{height:8px;background:#243f64;border-radius:999px;overflow:hidden}.fill{height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--teal),var(--cyan))}
+    .topline{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}.table-wrap{overflow:auto;border:1px solid #28476d;border-radius:16px}table{width:100%;border-collapse:collapse;min-width:920px}th,td{padding:12px 14px;text-align:left;border-bottom:1px solid #223956;white-space:nowrap}th{position:sticky;top:0;background:#10233c;color:var(--gold);font-size:12px}td{font-size:14px}tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+    .badge{display:inline-flex;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}.tier-A{background:rgba(255,185,56,.18);color:var(--gold)}.tier-B{background:rgba(70,166,255,.18);color:var(--cyan)}.tier-C{background:rgba(136,164,201,.18);color:#b8c9e2}.status-win{background:rgba(30,226,139,.16);color:var(--green)}.status-lost{background:rgba(255,102,135,.16);color:var(--red)}.status-other{background:rgba(255,185,56,.16);color:var(--gold)}
+    .empty{padding:28px 14px;text-align:center;color:var(--muted)}.overlay{position:fixed;inset:0;background:rgba(4,10,18,.92);display:grid;place-items:center;z-index:1000}.overlay-box{width:min(420px,calc(100vw - 24px));padding:24px;border-radius:22px;background:#0f1c2ff5;border:1px solid var(--line)}.progress{height:8px;background:#223956;border-radius:999px;overflow:hidden;margin:14px 0}.progress div{height:100%;width:18%;background:linear-gradient(90deg,var(--gold),var(--teal));transition:width .25s}.logs{display:grid;gap:8px;font-size:13px}.log.ok{color:#dffcf0}.log.err{color:#ffd4df}.muted{color:var(--muted)}
+    @media (max-width:1200px){.grid,.kpis,.overview{grid-template-columns:repeat(2,1fr)}}@media (max-width:760px){.wrap{width:min(100vw - 16px,100%)}.grid,.kpis,.overview{grid-template-columns:1fr}.result{text-align:left}}
+  </style>
+</head>
+<body>
+  <div class="overlay" id="overlay"><div class="overlay-box"><h2>CRM 管理儀表板</h2><p class="muted">正在同步 Google Sheets 並重建欄位。</p><div class="progress"><div id="progress"></div></div><div class="logs" id="logs"></div></div></div>
+  <div class="wrap">
+    <div class="card top">
+      <div class="brand"><div class="mark">▦</div><div><h1>CRM 管理儀表板</h1><div class="meta" id="conn-status">等待同步</div></div></div>
+      <div class="actions">
+        <div class="tabs">
+          <button class="active" data-tab="overview">總覽</button>
+          <button data-tab="table">客戶清單</button>
+          <button data-tab="raw">原始資料</button>
+        </div>
+        <button class="ghost" id="sync-btn">重新同步</button>
+        <button class="ghost" id="export-btn">匯出目前客戶</button>
+      </div>
+    </div>
+    <div class="card filters">
+      <div class="grid">
+        <div class="field"><label>搜尋</label><input id="search" placeholder="公司、業務員、ID、聯絡人"></div>
+        <div class="field"><label>業務員</label><select id="rep"></select></div>
+        <div class="field"><label>地區</label><select id="region"></select></div>
+        <div class="field"><label>產業</label><select id="industry"></select></div>
+        <div class="field"><label>等級</label><select id="tier"></select></div>
+        <div class="field"><label>狀態</label><select id="status"></select></div>
+        <div class="field"><label>起始日期</label><input id="start" type="date"></div>
+        <div class="field"><label>結束日期</label><input id="end" type="date"></div>
+      </div>
+      <div class="quick">
+        <div><div class="label">快速區間</div><div class="chips"><button class="chip active" data-range="all">全部</button><button class="chip" data-range="q1">Q1</button><button class="chip" data-range="q2">Q2</button><button class="chip" data-range="q3">Q3</button><button class="chip" data-range="q4">Q4</button><button class="chip" data-range="2025">2025</button></div></div>
+        <div class="result"><b id="count">0</b><span class="sub">篩選結果 / 總客戶 <span id="total">0</span></span></div>
+      </div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="section active" id="section-overview">
+      <div class="overview">
+        <div class="card panel"><h3>業務員業績分析<span class="hint">以客戶數與成交數計算</span></h3><canvas id="rep-chart" height="150"></canvas></div>
+        <div class="card panel"><h3>產業分布</h3><canvas id="industry-chart" height="180"></canvas></div>
+        <div class="card panel"><h3>銷售狀態漏斗</h3><div class="bars" id="status-bars"></div></div>
+        <div class="card panel"><h3>月度趨勢<span class="hint">依建立日彙整</span></h3><canvas id="month-chart" height="150"></canvas></div>
+        <div class="card panel"><h3>地區營收<span class="hint">用銷售金額彙總</span></h3><div class="bars" id="region-bars"></div></div>
+        <div class="card panel"><h3>客戶等級分布</h3><div class="tiers" id="tier-bars"></div></div>
+      </div>
+    </div>
+    <div class="section" id="section-table">
+      <div class="card panel"><div class="topline"><h3>客戶主表<span class="hint" id="table-meta"></span></h3></div><div class="table-wrap"><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div></div>
+    </div>
+    <div class="section" id="section-raw">
+      <div class="raw-tabs" id="raw-tabs"></div>
+      <div class="card panel"><div class="topline"><h3 id="raw-title">原始資料</h3><button class="ghost" id="export-raw-btn">匯出目前資料表</button></div><div class="table-wrap"><table><thead id="raw-head"></thead><tbody id="raw-body"></tbody></table></div></div>
+    </div>
+  </div>
+  <script>
+    const RAW={customers:[],sales:[],orders:[],followup:[],reps:[]};
+    const LABELS={customers:'客戶資料',sales:'銷售機會',orders:'訂單資料',followup:'跟進紀錄',reps:'業務員名單'};
+    const RAW_COLORS={customers:'var(--gold)',sales:'var(--green)',orders:'var(--cyan)',followup:'var(--purple)',reps:'var(--teal)'};
+    const STATE={range:'all',rawKey:'customers'};
+    let customers=[],sales=[],filtered=[],repChart,industryChart,monthChart;
+    const palette=['#ffb938','#14d5c1','#46a6ff','#9b7bff','#ff914d','#ff73c8','#1ee28b','#7aa6ff'];
+
+    const $=id=>document.getElementById(id);
+    function addLog(text,type=''){const d=document.createElement('div');d.className=`log ${type}`;d.textContent=`${type==='ok'?'✓':type==='err'?'✕':'•'} ${text}`;$('logs').appendChild(d);return d}
+    function setProgress(v){$('progress').style.width=`${v}%`}
+    function text(v){return String(v??'').trim()}
+    function num(v){if(typeof v==='number')return v;const n=Number(String(v??'').replace(/,/g,'').trim());return Number.isFinite(n)?n:0}
+    function dateOf(v){const t=text(v).replace(/\//g,'-');if(!t)return null;const d=new Date(t);return Number.isNaN(d.getTime())?null:d}
+    function pick(row,keys){for(const k of keys){if(row[k]!==undefined&&row[k]!==null&&text(row[k])!=='')return row[k]}return ''}
+    function rangeOk(d,s,e){if(!d)return !s&&!e;if(s&&d<s)return false;if(e&&d>e)return false;return true}
+    function wan(v){return `${(v/10000).toFixed(v>=1000000?0:1)}萬`}
+    function chartOpts(){return{responsive:true,plugins:{legend:{labels:{color:'#bdd0ec',font:{size:11}}}},scales:{x:{ticks:{color:'#86a2c8'},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#86a2c8'},grid:{color:'rgba(255,255,255,.04)'}}}}}
+    function fillSelect(id,values){const el=$(id),prev=el.value;el.innerHTML='<option value="">全部</option>';values.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;el.appendChild(o)});el.value=values.includes(prev)?prev:''}
+    function exportRows(rows,name){if(!rows.length)return;const cols=Object.keys(rows[0]);const csv=[cols.join(','),...rows.map(r=>cols.map(c=>`"${String(r[c]??'').replace(/"/g,'""')}"`).join(','))];const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([`\uFEFF${csv.join('\n')}`],{type:'text/csv;charset=utf-8'}));a.download=name;a.click();URL.revokeObjectURL(a.href)}
+
+    function normalizeSales(rows){
+      return rows.map(row=>{
+        const id=text(pick(row,['銷售ID']));
+        if(!id||id==='銷售ID')return null;
+        return{
+          id,
+          customerId:text(pick(row,['客戶ID'])),
+          company:text(pick(row,['公司名稱'])),
+          status:text(pick(row,['銷售狀態'])),
+          currency:text(pick(row,['幣別'])),
+          amount:num(pick(row,['預估金額','金額'])),
+          expectedDate:text(pick(row,['預計成交日'])),
+          actualDate:text(pick(row,['實際成交日'])),
+          rep:text(pick(row,['負責業務'])),
+          note:text(pick(row,['備註'])),
+          createdAt:text(pick(row,['建立日','建立日期'])),
+          updatedAt:text(pick(row,['最後更新']))
+        };
+      }).filter(Boolean);
+    }
+
+    function normalizeCustomers(rows,salesRows){
+      const byCustomer=new Map();
+      salesRows.forEach(row=>{if(!row.customerId)return;if(!byCustomer.has(row.customerId))byCustomer.set(row.customerId,[]);byCustomer.get(row.customerId).push(row)});
+      return rows.map(row=>{
+        const id=text(pick(row,['客戶ID','基本識別']));
+        if(!id||id==='客戶ID')return null;
+        const related=byCustomer.get(id)||[];
+        const sale=related[0]||{};
+        return{
+          id,
+          company:text(pick(row,['公司名稱','聯絡資訊'])),
+          contact:text(pick(row,['聯絡人'])),
+          jobTitle:text(pick(row,['職稱'])),
+          phone:text(pick(row,['電話'])),
+          email:text(pick(row,['Email','電子郵件','分類資訊'])),
+          industry:text(pick(row,['產業別','產業'])),
+          region:text(pick(row,['地區','區域'])),
+          tier:text(pick(row,['客戶等級','等級','業務資訊'])),
+          rep:text(pick(row,['負責業務','業務員']))||sale.rep,
+          status:text(pick(row,['銷售狀態','狀態','業績數據']))||sale.status,
+          orderCount:num(pick(row,['訂單數','訂單筆數'])),
+          satisfaction:num(pick(row,['客戶滿意度','滿意度','日期紀錄'])),
+          createdAt:text(pick(row,['建立日期','建立日'])),
+          updatedAt:text(pick(row,['最後更新','更新日期','系統欄位'])),
+          note:text(pick(row,['備註'])),
+          revenue:related.reduce((sum,item)=>sum+item.amount,0)
+        };
+      }).filter(Boolean);
+    }
+
+    function currentRange(){
+      const s=$('start').value?new Date(`${$('start').value}T00:00:00`):null;
+      const e=$('end').value?new Date(`${$('end').value}T23:59:59`):null;
+      return{s,e};
+    }
+
+    function syncRangeInputs(){
+      const year='2025';
+      if(STATE.range==='all'){return}
+      if(STATE.range==='2025'){$('start').value=`${year}-01-01`;$('end').value=`${year}-12-31`;return}
+      const map={q1:['01-01','03-31'],q2:['04-01','06-30'],q3:['07-01','09-30'],q4:['10-01','12-31']};
+      const pair=map[STATE.range];if(pair){$('start').value=`${year}-${pair[0]}`;$('end').value=`${year}-${pair[1]}`}
+    }
+
+    function filteredSales(){
+      const ids=new Set(filtered.map(item=>item.id));
+      return sales.filter(item=>ids.has(item.customerId));
+    }
+
+    function buildFilters(){
+      fillSelect('rep',[...new Set(customers.map(x=>x.rep).filter(Boolean))].sort());
+      fillSelect('region',[...new Set(customers.map(x=>x.region).filter(Boolean))].sort());
+      fillSelect('industry',[...new Set(customers.map(x=>x.industry).filter(Boolean))].sort());
+      fillSelect('tier',[...new Set(customers.map(x=>x.tier).filter(Boolean))].sort());
+      fillSelect('status',[...new Set(customers.map(x=>x.status).filter(Boolean))].sort());
+    }
+
+    function applyFilters(){
+      const search=text($('search').value).toLowerCase();
+      const rep=$('rep').value,region=$('region').value,industry=$('industry').value,tier=$('tier').value,status=$('status').value;
+      const {s,e}=currentRange();
+      filtered=customers.filter(item=>{
+        const d=dateOf(item.createdAt)||dateOf(item.updatedAt);
+        if(rep&&item.rep!==rep)return false;
+        if(region&&item.region!==region)return false;
+        if(industry&&item.industry!==industry)return false;
+        if(tier&&item.tier!==tier)return false;
+        if(status&&item.status!==status)return false;
+        if(!rangeOk(d,s,e))return false;
+        if(!search)return true;
+        return [item.id,item.company,item.rep,item.contact].join(' ').toLowerCase().includes(search);
+      });
+      $('count').textContent=filtered.length;$('total').textContent=customers.length;
+      renderAll();
+    }
+
+    function renderKpis(){
+      const fs=filteredSales();
+      const won=fs.filter(x=>x.status==='成交');
+      const lost=fs.filter(x=>x.status==='流失');
+      const totalAmount=fs.reduce((s,x)=>s+x.amount,0);
+      const wonAmount=won.reduce((s,x)=>s+x.amount,0);
+      const aCount=filtered.filter(x=>x.tier==='A').length;
+      const avgSat=filtered.length?(filtered.reduce((s,x)=>s+x.satisfaction,0)/filtered.length):0;
+      const conv=fs.length?(won.length/fs.length)*100:0;
+      const items=[
+        ['▦',filtered.length,'家','總客戶數','var(--cyan)',`${Math.round((filtered.length/Math.max(customers.length,1))*100)}%`],
+        ['💰',wan(totalAmount),'','總銷售金額','var(--teal)',`${fs.length} 筆`],
+        ['🎯',won.length,'件','成交','var(--green)',wan(wonAmount)],
+        ['📉',lost.length,'件','流失','var(--red)',`${fs.length?Math.round((lost.length/fs.length)*100):0}%`],
+        ['📈',conv.toFixed(1),'%','轉換率','var(--cyan)','成交 / 銷售'],
+        ['★',aCount,'家','A 級客戶','var(--purple)',`${filtered.length?Math.round((aCount/filtered.length)*100):0}%`],
+        ['☺',avgSat.toFixed(1),'/5','平均滿意度','var(--orange)','依客戶主表'],
+        ['🧾',wan(wonAmount),'','成交金額','var(--gold)','以成交案件計']
+      ];
+      $('kpis').innerHTML=items.map(([i,v,u,t,c,d])=>`<div class="kpi" style="--accent:${c}"><div class="i">${i}</div><div class="v">${v}<span class="sub">${u}</span></div><div class="t">${t}</div><div class="d">${d}</div></div>`).join('');
+    }
+
+    function paintBars(id,rows,format,color){
+      const el=$(id);
+      if(!rows.length){el.innerHTML='<div class="empty">沒有可顯示的資料</div>';return}
+      const max=Math.max(...rows.map(r=>r.value),1);
+      el.innerHTML=rows.map((row,index)=>`<div class="bar"><div class="bar-h"><span>${row.label}</span><span style="color:${color(index,row)}">${format(row.value,row)}</span></div><div class="track"><div class="fill" style="width:${Math.round(row.value/max*100)}%;background:${color(index,row)}"></div></div></div>`).join('');
+    }
+
+    function renderCharts(){
+      const fs=filteredSales();
+      const reps=[...new Set([...filtered.map(x=>x.rep).filter(Boolean),...RAW.reps.map(x=>text(x['姓名'])).filter(Boolean)])];
+      const repStats=reps.map(name=>({name,customers:filtered.filter(x=>x.rep===name).length,won:fs.filter(x=>x.rep===name&&x.status==='成交').length})).filter(x=>x.customers||x.won);
+      if(repChart)repChart.destroy();
+      repChart=new Chart($('rep-chart'),{type:'bar',data:{labels:repStats.map(x=>x.name),datasets:[{label:'客戶',data:repStats.map(x=>x.customers),backgroundColor:'#9b7bff',borderRadius:6},{label:'成交',data:repStats.map(x=>x.won),backgroundColor:'#1ee28b',borderRadius:6}]},options:chartOpts()});
+
+      const industries={};filtered.forEach(x=>{const k=x.industry||'未分類';industries[k]=(industries[k]||0)+1});
+      const il=Object.keys(industries);
+      if(industryChart)industryChart.destroy();
+      industryChart=new Chart($('industry-chart'),{type:'doughnut',data:{labels:il,datasets:[{data:il.map(k=>industries[k]),backgroundColor:il.map((_,i)=>palette[i%palette.length]),borderColor:'#0c1627',borderWidth:1}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#bdd0ec',boxWidth:12,font:{size:11}}}}}});
+
+      const statusMap={};fs.forEach(x=>{const k=x.status||'未設定';statusMap[k]=(statusMap[k]||0)+1});
+      paintBars('status-bars',Object.entries(statusMap).map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value),v=>`${v}`,(_,row)=>row.label==='成交'?'var(--green)':row.label==='流失'?'var(--red)':'var(--gold)');
+
+      const monthMap={};fs.forEach(x=>{const d=dateOf(x.createdAt)||dateOf(x.expectedDate);if(!d)return;const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;if(!monthMap[key])monthMap[key]={count:0,amount:0};monthMap[key].count++;monthMap[key].amount+=x.amount});
+      const ml=Object.keys(monthMap).sort().slice(-12);
+      if(monthChart)monthChart.destroy();
+      monthChart=new Chart($('month-chart'),{type:'line',data:{labels:ml,datasets:[{label:'客戶數',data:ml.map(k=>monthMap[k].count),borderColor:'#14d5c1',backgroundColor:'rgba(20,213,193,.1)',fill:true,tension:.35,pointRadius:4,yAxisID:'y'},{label:'金額',data:ml.map(k=>monthMap[k].amount),borderColor:'#ffb938',borderDash:[4,4],fill:false,tension:.35,pointRadius:4,yAxisID:'y1'}]},options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#bdd0ec',font:{size:11}}}},scales:{x:{ticks:{color:'#86a2c8'},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#86a2c8'},grid:{color:'rgba(255,255,255,.04)'}},y1:{position:'right',ticks:{color:'#86a2c8',callback:v=>`${Math.round(v/10000)}萬`},grid:{drawOnChartArea:false}}}}});
+
+      const byId=new Map(customers.map(x=>[x.id,x]));const regionMap={};fs.forEach(x=>{const key=byId.get(x.customerId)?.region||'未分類';regionMap[key]=(regionMap[key]||0)+x.amount});
+      paintBars('region-bars',Object.entries(regionMap).map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value),v=>`NT$ ${wan(v)}`,(i)=>palette[i%palette.length]);
+
+      const tiers=['A','B','C'].map(t=>{const count=filtered.filter(x=>x.tier===t).length;return{tier:t,count,percent:filtered.length?Math.round(count/filtered.length*100):0}});
+      $('tier-bars').innerHTML=tiers.map(row=>`<div class="bar"><div class="bar-h"><span>${row.tier} 級</span><span>${row.count} <span class="muted">(${row.percent}%)</span></span></div><div class="track"><div class="fill" style="width:${row.percent}%;background:${row.tier==='A'?'var(--gold)':row.tier==='B'?'var(--cyan)':'#7f96bb'}"></div></div></div>`).join('');
+    }
+
+    function renderTable(){
+      const cols=[['客戶ID','id'],['公司名稱','company'],['聯絡人','contact'],['地區','region'],['產業','industry'],['等級','tier'],['負責業務','rep'],['銷售狀態','status'],['滿意度','satisfaction'],['建立日期','createdAt'],['更新日期','updatedAt']];
+      $('table-meta').textContent=`共 ${filtered.length} 筆`;
+      $('table-head').innerHTML=`<tr>${cols.map(([l])=>`<th>${l}</th>`).join('')}</tr>`;
+      if(!filtered.length){$('table-body').innerHTML=`<tr><td class="empty" colspan="${cols.length}">沒有符合條件的客戶資料</td></tr>`;return}
+      $('table-body').innerHTML=filtered.map(item=>`<tr>${cols.map(([_,key])=>{const value=item[key]??'';if(key==='tier')return`<td><span class="badge tier-${value||'C'}">${value||'-'}</span></td>`;if(key==='status'){const cls=value==='成交'?'status-win':value==='流失'?'status-lost':'status-other';return`<td><span class="badge ${cls}">${value||'-'}</span></td>`}if(key==='satisfaction')return`<td>${value?Number(value).toFixed(1):'-'}</td>`;return`<td>${value||'-'}</td>`}).join('')}</tr>`).join('');
+    }
+
+    function renderRawTabs(){$('raw-tabs').innerHTML=Object.entries(LABELS).map(([k,l])=>`<button class="${STATE.rawKey===k?'active':''}" data-raw="${k}">${l} (${RAW[k].length})</button>`).join('')}
+    function renderRawTable(){
+      const key=STATE.rawKey,rows=RAW[key]||[],color=RAW_COLORS[key];$('raw-title').textContent=`${LABELS[key]} (${rows.length} 筆)`;
+      if(!rows.length){$('raw-head').innerHTML='';$('raw-body').innerHTML='<tr><td class="empty">沒有資料</td></tr>';return}
+      const cols=Object.keys(rows[0]);$('raw-head').innerHTML=`<tr>${cols.map(c=>`<th style="color:${color}">${c||'未命名欄位'}</th>`).join('')}</tr>`;
+      $('raw-body').innerHTML=rows.slice(0,200).map(row=>`<tr>${cols.map(c=>`<td>${row[c]??''}</td>`).join('')}</tr>`).join('');
+    }
+
+    function renderAll(){renderKpis();renderCharts();renderTable();renderRawTabs();renderRawTable()}
+
+    async function loadData(){
+      const line=addLog('連線到本機 API');setProgress(18);
+      try{
+        const res=await fetch('/api/all');if(!res.ok)throw new Error(`HTTP ${res.status}`);
+        Object.assign(RAW,await res.json());line.className='log ok';line.textContent='✓ 已取得全部工作表資料';
+        addLog('重建欄位映射與統一格式');setProgress(55);
+        sales=normalizeSales(RAW.sales);customers=normalizeCustomers(RAW.customers,sales);buildFilters();applyFilters();
+        $('conn-status').textContent=`已同步：客戶 ${RAW.customers.length} · 銷售 ${RAW.sales.length} · 訂單 ${RAW.orders.length} · 跟進 ${RAW.followup.length} · 業務員 ${RAW.reps.length}`;
+        setProgress(100);setTimeout(()=>{$('overlay').style.display='none'},350);
+      }catch(err){
+        line.className='log err';line.textContent=`✕ 同步失敗：${err.message}`;addLog('請確認 node server.js 正在執行，且試算表權限與表頭列設定正確。','err');setProgress(100);
+      }
+    }
+
+    document.querySelectorAll('.tabs button').forEach(btn=>btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tabs button').forEach(node=>node.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.section').forEach(sec=>sec.classList.remove('active'));
+      $(`section-${btn.dataset.tab}`).classList.add('active');
+    }));
+
+    ['search','rep','region','industry','tier','status','start','end'].forEach(id=>{
+      $(id).addEventListener(id==='search'?'input':'change',()=>{
+        STATE.range='all';
+        document.querySelectorAll('.chip').forEach(chip=>chip.classList.toggle('active',chip.dataset.range==='all'));
+        applyFilters();
+      });
+    });
+
+    document.querySelector('.chips').addEventListener('click',event=>{
+      const btn=event.target.closest('[data-range]');if(!btn)return;
+      STATE.range=btn.dataset.range;
+      document.querySelectorAll('.chip').forEach(chip=>chip.classList.toggle('active',chip===btn));
+      if(STATE.range==='all'){$('start').value='';$('end').value=''}else{syncRangeInputs()}
+      applyFilters();
+    });
+
+    $('raw-tabs').addEventListener('click',event=>{
+      const btn=event.target.closest('[data-raw]');if(!btn)return;
+      STATE.rawKey=btn.dataset.raw;renderRawTabs();renderRawTable();
+    });
+
+    $('sync-btn').addEventListener('click',()=>{
+      $('overlay').style.display='grid';$('logs').innerHTML='';setProgress(10);loadData();
+    });
+    $('export-btn').addEventListener('click',()=>exportRows(filtered,'crm_customers_filtered.csv'));
+    $('export-raw-btn').addEventListener('click',()=>exportRows(RAW[STATE.rawKey]||[],`crm_${STATE.rawKey}.csv`));
+
+    loadData();
+  </script>
+</body>
+</html>
