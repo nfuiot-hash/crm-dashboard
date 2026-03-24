@@ -1,17 +1,17 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
 const path = require('path');
 const { GoogleSpreadsheet } = require('google-spreadsheet');
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const SPREADSHEET_ID = '1AssV5gEVuM99-BJJV2lqjoErXNqi3NLHtRG5dupFHrU';
-const SERVICE_ACCOUNT_EMAIL = 'id-390@marine-actor-491206-s4.iam.gserviceaccount.com';
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID || '1AssV5gEVuM99-BJJV2lqjoErXNqi3NLHtRG5dupFHrU';
 const SHEETS = {
   customers: { gid: 29703441, headerRowIndex: 4 },
   sales: { gid: 1014737581, headerRowIndex: 4 },
@@ -20,15 +20,32 @@ const SHEETS = {
   reps: { gid: 1387199140, headerRowIndex: 3 },
 };
 
-function buildGoogleSheetsError(err, gid, headerRowIndex) {
+function loadGoogleCredentials() {
+  const rawJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (rawJson) {
+    const parsed = JSON.parse(rawJson);
+    if (parsed.private_key) {
+      parsed.private_key = parsed.private_key.replace(/\\n/g, '\n');
+    }
+    return parsed;
+  }
+
+  const credentialsPath = path.join(__dirname, 'credentials.json');
+  if (fs.existsSync(credentialsPath)) {
+    return require(credentialsPath);
+  }
+
+  throw new Error(
+    'Google credentials are missing. Set GOOGLE_SERVICE_ACCOUNT_JSON or provide credentials.json locally.'
+  );
+}
+
+function sanitizeGoogleError(err, gid, headerRowIndex) {
   const rawMessage = err && err.message ? err.message : String(err || 'Unknown error');
   const statusCode = err && (err.code || err.statusCode || err.response?.status);
   const details = {
-    spreadsheetId: SPREADSHEET_ID,
     sheetGid: gid || null,
     headerRowIndex: headerRowIndex || null,
-    serviceAccountEmail: SERVICE_ACCOUNT_EMAIL,
-    rawMessage,
   };
 
   if (/oauth2|token|fetcherror/i.test(rawMessage)) {
@@ -36,10 +53,7 @@ function buildGoogleSheetsError(err, gid, headerRowIndex) {
       status: 502,
       error: 'google_auth_failed',
       message: 'Google authentication failed while requesting an access token.',
-      details: {
-        ...details,
-        hint: 'Check internet access to googleapis.com and verify credentials.json is valid.',
-      },
+      details,
     };
   }
 
@@ -47,11 +61,8 @@ function buildGoogleSheetsError(err, gid, headerRowIndex) {
     return {
       status: 403,
       error: 'google_sheet_forbidden',
-      message: 'The service account does not have permission to access this spreadsheet.',
-      details: {
-        ...details,
-        hint: 'Share the spreadsheet with the service account email as Viewer or Editor.',
-      },
+      message: 'The configured service account does not have permission to access this spreadsheet.',
+      details,
     };
   }
 
@@ -60,10 +71,7 @@ function buildGoogleSheetsError(err, gid, headerRowIndex) {
       status: 404,
       error: 'google_sheet_not_found',
       message: 'The spreadsheet or worksheet could not be found.',
-      details: {
-        ...details,
-        hint: 'Check the spreadsheet ID and worksheet gid values in server.js.',
-      },
+      details,
     };
   }
 
@@ -72,10 +80,7 @@ function buildGoogleSheetsError(err, gid, headerRowIndex) {
       status: 500,
       error: 'google_sheet_header_missing',
       message: 'The worksheet header row is blank or not located at the configured row.',
-      details: {
-        ...details,
-        hint: 'Move your column names to the configured header row, or update headerRowIndex in server.js.',
-      },
+      details,
     };
   }
 
@@ -83,16 +88,23 @@ function buildGoogleSheetsError(err, gid, headerRowIndex) {
     status: 500,
     error: 'google_sheet_read_failed',
     message: 'Failed to read data from Google Sheets.',
-    details: {
-      ...details,
-      hint: 'Review the raw error message to identify the failing Google Sheets step.',
-    },
+    details,
   };
+}
+
+function toSheetValue(value) {
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  const stringValue = String(value ?? '').trim();
+  const normalized = stringValue.replace(/,/g, '');
+  return normalized !== '' && !Number.isNaN(Number(normalized)) ? Number(normalized) : stringValue;
 }
 
 async function getSheetData({ gid, headerRowIndex = 1 }) {
   const doc = new GoogleSpreadsheet(SPREADSHEET_ID);
-  const creds = require('./credentials.json');
+  const creds = loadGoogleCredentials();
 
   await doc.useServiceAccountAuth(creds);
   await doc.loadInfo();
@@ -107,13 +119,11 @@ async function getSheetData({ gid, headerRowIndex = 1 }) {
   const headers = sheet.headerValues;
 
   return rows.map((row) => {
-    const obj = {};
+    const result = {};
     headers.forEach((header) => {
-      const value = row[header] || '';
-      const normalized = typeof value === 'string' ? value.replace(/,/g, '').trim() : value;
-      obj[header] = !isNaN(normalized) && normalized !== '' ? Number(normalized) : value;
+      result[header] = toSheetValue(row[header]);
     });
-    return obj;
+    return result;
   });
 }
 
@@ -138,8 +148,8 @@ app.get('/api/all', async (req, res) => {
 
     res.json({ customers, sales, orders, followup, reps });
   } catch (err) {
-    const payload = buildGoogleSheetsError(err);
-    console.error('Failed to load all worksheets:', payload.details.rawMessage);
+    const payload = sanitizeGoogleError(err);
+    console.error('Failed to load all worksheets:', err && err.message ? err.message : err);
     res.status(payload.status).json(payload);
   }
 });
@@ -150,8 +160,8 @@ Object.entries(SHEETS).forEach(([name, config]) => {
       const data = await getSheetData(config);
       res.json(data);
     } catch (err) {
-      const payload = buildGoogleSheetsError(err, config.gid, config.headerRowIndex);
-      console.error(`Failed to load worksheet ${name} (${config.gid}):`, payload.details.rawMessage);
+      const payload = sanitizeGoogleError(err, config.gid, config.headerRowIndex);
+      console.error(`Failed to load worksheet ${name} (${config.gid}):`, err && err.message ? err.message : err);
       res.status(payload.status).json(payload);
     }
   });
@@ -165,4 +175,3 @@ app.listen(PORT, () => {
   console.log('API:       http://localhost:' + PORT + '/api/health');
   console.log('');
 });
-// git test%%%
