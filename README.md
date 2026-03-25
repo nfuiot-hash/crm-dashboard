@@ -1,37 +1,44 @@
 # CRM Dashboard
 
-展示用 CRM 儀表板，資料來源為 Google Sheets 虛擬資料。
+CRM dashboard backed by MySQL, JWT authentication, and Google Sheets sync.
 
-## 本機啟動
+## Setup
+
+1. Install dependencies:
 
 ```bash
 npm install
-node server.js
 ```
 
-開啟 `http://localhost:3000`
+2. Copy `.env.example` to `.env` and fill in your values.
 
-## 憑證設定
-
-可使用以下兩種方式其一：
-
-1. 本機放置 `credentials.json`
-2. 設定環境變數 `GOOGLE_SERVICE_ACCOUNT_JSON`
-
-若要變更試算表，可另外設定：
+3. Initialize the database:
 
 ```bash
-SPREADSHEET_ID=your_spreadsheet_id
-PORT=3000
+npm run init-db
 ```
 
-## Git 注意事項
+4. Start the app:
 
-- `credentials.json` 已排除，不會提交到 GitHub
-- 展示資料為虛擬資料
+```bash
+npm run start
+```
 
-## 部署重點
+## Default admin account
 
-- 平台需提供 `PORT`
-- 平台需提供 `GOOGLE_SERVICE_ACCOUNT_JSON`
-- 啟動指令為 `node server.js`
+- Username: `admin`
+- Password: `Admin@2026!`
+
+Change the password after first login.
+
+## Scripts
+
+- `npm run start` - start the app
+- `npm run dev` - run with nodemon
+- `npm run init-db` - create the database schema and default admin
+- `npm run sync` - sync Google Sheets data into MySQL
+
+## Notes
+
+- Keep `.env` and `credentials.json` out of version control.
+- `npm run init-db` uses `DB_ROOT_USER` and `DB_ROOT_PASS` to create the schema and the runtime app user.

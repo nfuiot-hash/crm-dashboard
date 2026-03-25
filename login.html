@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM 登入</title>
+  <style>
+    :root{--bg:#07111f;--panel:#0f1c2f;--line:#1f3b60;--text:#e9f2ff;--muted:#88a4c9;--gold:#ffb938;--teal:#14d5c1;--red:#ff6687;--green:#1ee28b}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{min-height:100vh;background:linear-gradient(180deg,#08111d,#091423);display:flex;align-items:center;justify-content:center;font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;color:var(--text);padding:16px}
+    .card{width:min(420px,calc(100vw - 32px));background:rgba(15,28,47,.98);border:1px solid var(--line);border-radius:24px;padding:40px 36px;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+    .logo{display:flex;align-items:center;gap:14px;margin-bottom:32px}
+    .mark{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#173250,#0f2040);border:1px solid var(--line);display:grid;place-items:center;color:var(--gold);font-size:26px}
+    .brand-name{font-size:22px;font-weight:900;letter-spacing:.5px}
+    .brand-sub{font-size:12px;color:var(--muted);margin-top:2px}
+    h2{font-size:18px;font-weight:700;margin-bottom:6px}
+    .sub{color:var(--muted);font-size:13px;margin-bottom:28px}
+    .field{margin-bottom:18px}
+    label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;letter-spacing:.5px}
+    input{width:100%;padding:14px 16px;background:#10213a;border:1px solid #2e5485;border-radius:14px;color:var(--text);font-size:15px;outline:none;transition:border-color .2s}
+    input:focus{border-color:var(--teal)}
+    input::placeholder{color:#3d5a80}
+    .btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--gold),#ff9340);border:none;border-radius:14px;color:#07111f;font-size:16px;font-weight:900;cursor:pointer;transition:opacity .2s;margin-top:8px}
+    .btn:hover{opacity:.9}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .alert{padding:12px 16px;border-radius:12px;font-size:13px;margin-bottom:18px;display:none}
+    .alert.err{background:rgba(255,102,135,.12);border:1px solid rgba(255,102,135,.3);color:var(--red)}
+    .alert.ok{background:rgba(30,226,139,.12);border:1px solid rgba(30,226,139,.3);color:var(--green)}
+    .footer{margin-top:24px;text-align:center;font-size:12px;color:var(--muted)}
+    .loading{display:none;text-align:center;padding:8px;color:var(--teal);font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">
+      <div class="mark">C</div>
+      <div>
+        <div class="brand-name">CRM 管理系統</div>
+        <div class="brand-sub">Power BI 儀表板入口</div>
+      </div>
+    </div>
+
+    <h2>登入帳號</h2>
+    <p class="sub">請輸入你的帳號與密碼完成登入</p>
+
+    <div class="alert" id="alert"></div>
+
+    <form id="login-form" autocomplete="on">
+      <div class="field">
+        <label for="username">帳號</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          placeholder="請輸入帳號"
+          autocomplete="username"
+          required
+        >
+      </div>
+      <div class="field">
+        <label for="password">密碼</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="請輸入密碼"
+          autocomplete="current-password"
+          required
+        >
+      </div>
+      <button class="btn" type="submit" id="submit-btn">登入</button>
+      <div class="loading" id="loading">登入中...</div>
+    </form>
+
+    <div class="footer">建議使用公司配發帳號登入 CRM 系統</div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('crm_token');
+    if (token) {
+      fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then((r) => {
+          if (r.ok) {
+            window.location.href = '/';
+          } else {
+            localStorage.removeItem('crm_token');
+            localStorage.removeItem('crm_user');
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem('crm_token');
+          localStorage.removeItem('crm_user');
+        });
+    }
+
+    const form = document.getElementById('login-form');
+    const alertEl = document.getElementById('alert');
+    const btn = document.getElementById('submit-btn');
+    const loading = document.getElementById('loading');
+
+    function showAlert(message, type = 'err') {
+      alertEl.textContent = message;
+      alertEl.className = `alert ${type}`;
+      alertEl.style.display = 'block';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!username || !password) {
+        showAlert('請輸入帳號與密碼');
+        return;
+      }
+
+      btn.disabled = true;
+      loading.style.display = 'block';
+      alertEl.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+          localStorage.setItem('crm_token', data.token);
+          localStorage.setItem('crm_user', JSON.stringify(data.user));
+          showAlert(`登入成功，${data.user.name}，即將跳轉...`, 'ok');
+          setTimeout(() => { window.location.href = '/'; }, 800);
+          return;
+        }
+
+        showAlert(data.message || '登入失敗，請稍後再試');
+      } catch (err) {
+        showAlert('目前無法連線到伺服器，請稍後再試');
+      } finally {
+        btn.disabled = false;
+        loading.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

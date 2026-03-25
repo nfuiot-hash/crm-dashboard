@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>帳號管理 - CRM 系統</title>
+<style>
+  :root{--bg:#07111f;--panel:#0f1c2f;--line:#1f3b60;--text:#e9f2ff;--muted:#88a4c9;--gold:#ffb938;--teal:#14d5c1;--cyan:#46a6ff;--purple:#9b7bff;--green:#1ee28b;--red:#ff6687;--orange:#ff914d}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;background:linear-gradient(180deg,#08111d,#091423);font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;color:var(--text)}
+  .wrap{width:min(1200px,calc(100vw - 24px));margin:0 auto;padding:16px 0 40px}
+  .card{background:rgba(15,28,47,.96);border:1px solid var(--line);border-radius:20px;box-shadow:0 18px 40px rgba(0,0,0,.24)}
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:12px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .mark{width:42px;height:42px;border-radius:12px;background:#173250;display:grid;place-items:center;color:var(--gold);font-size:20px}
+  h1{font-size:18px;font-weight:900}
+  .user-info{font-size:12px;color:var(--muted);margin-top:2px}
+  .actions{display:flex;gap:8px;align-items:center}
+  .btn,.ghost{padding:10px 18px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--muted);transition:all .15s}
+  .btn.primary{background:linear-gradient(135deg,var(--gold),#ff9340);color:#07111f;border-color:transparent}
+  .btn.danger {background:rgba(255,102,135,.15);color:var(--red);border-color:rgba(255,102,135,.3)}
+  .btn.success{background:rgba(30,226,139,.15);color:var(--green);border-color:rgba(30,226,139,.3)}
+  .btn:hover{opacity:.85}
+
+  .tabs{display:flex;gap:4px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .tab{padding:8px 18px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer}
+  .tab.active{background:linear-gradient(135deg,var(--gold),#ff9340);color:#07111f;border-color:transparent}
+
+  .section{display:none;padding:20px}
+  .section.active{display:block}
+
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:12px 14px;text-align:left;border-bottom:1px solid #223956;white-space:nowrap;font-size:13px}
+  th{background:#10233c;color:var(--gold);font-size:12px;font-weight:700}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .badge{display:inline-flex;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
+  .role-admin  {background:rgba(255,185,56,.18);color:var(--gold)}
+  .role-sales  {background:rgba(20,213,193,.18);color:var(--teal)}
+  .role-viewer {background:rgba(136,164,201,.18);color:#b8c9e2}
+  .status-active  {background:rgba(30,226,139,.15);color:var(--green)}
+  .status-disabled{background:rgba(255,102,135,.15);color:var(--red)}
+  .status-locked  {background:rgba(255,145,61,.15);color:var(--orange)}
+  .act-btns{display:flex;gap:6px}
+  .act-btn{padding:5px 10px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;border:none}
+  .act-edit   {background:rgba(70,166,255,.15);color:var(--cyan)}
+  .act-reset  {background:rgba(255,185,56,.15);color:var(--gold)}
+  .act-unlock {background:rgba(30,226,139,.15);color:var(--green)}
+  .act-disable{background:rgba(255,102,135,.15);color:var(--red)}
+  .act-delete {background:rgba(255,102,135,.2);color:var(--red)}
+
+  /* Modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(4,10,18,.85);display:none;place-items:center;z-index:1000}
+  .modal-bg.show{display:grid}
+  .modal{width:min(480px,calc(100vw - 32px));background:rgba(15,28,47,.99);border:1px solid var(--line);border-radius:20px;padding:28px}
+  .modal h3{font-size:17px;margin-bottom:20px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px;letter-spacing:.5px}
+  .field input,.field select{width:100%;padding:11px 14px;background:#10213a;border:1px solid #2e5485;border-radius:12px;color:var(--text);font-size:14px;outline:none}
+  .field input:focus,.field select:focus{border-color:var(--teal)}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+  .empty{padding:24px;text-align:center;color:var(--muted);font-size:13px}
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+  .stat{padding:16px;border-radius:14px;border:1px solid var(--line);border-top:3px solid var(--accent);background:rgba(15,28,47,.96)}
+  .stat .val{font-size:28px;font-weight:900;color:var(--accent)}
+  .stat .lbl{font-size:12px;color:var(--muted);margin-top:4px}
+  .log-status-success{color:var(--green)}
+  .log-status-failed {color:var(--red)}
+  .log-status-locked {color:var(--orange)}
+  .msg{padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px;display:none}
+  .msg.ok {background:rgba(30,226,139,.12);border:1px solid rgba(30,226,139,.3);color:var(--green)}
+  .msg.err{background:rgba(255,102,135,.12);border:1px solid rgba(255,102,135,.3);color:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="topbar">
+      <div class="brand">
+        <div class="mark">▦</div>
+        <div>
+          <h1>帳號管理</h1>
+          <div class="user-info" id="user-info">載入中...</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" onclick="openCreate()">＋ 新增帳號</button>
+        <button class="ghost" onclick="window.location.href='/'">← 返回儀表板</button>
+        <button class="ghost" onclick="logout()">登出</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('users')">👥 帳號列表</button>
+      <button class="tab"        onclick="showTab('logs')">📋 登入記錄</button>
+      <button class="tab"        onclick="showTab('sync')">🔄 同步記錄</button>
+    </div>
+
+    <!-- 帳號列表 -->
+    <div class="section active" id="tab-users">
+      <div class="stat-grid" id="stats"></div>
+      <div class="msg" id="user-msg"></div>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>帳號</th><th>姓名</th><th>部門</th>
+              <th>角色</th><th>狀態</th><th>最後登入</th><th>建立日期</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="user-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 登入記錄 -->
+    <div class="section" id="tab-logs">
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr><th>時間</th><th>帳號</th><th>IP</th><th>狀態</th><th>原因</th></tr>
+          </thead>
+          <tbody id="log-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 同步記錄 -->
+    <div class="section" id="tab-sync">
+      <div style="margin-bottom:14px">
+        <button class="btn primary" onclick="syncNow()">🔄 立即同步</button>
+        <span id="sync-msg" style="margin-left:12px;font-size:13px;color:var(--muted)"></span>
+      </div>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr><th>時間</th><th>工作表</th><th>同步筆數</th><th>狀態</th><th>訊息</th></tr>
+          </thead>
+          <tbody id="sync-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 新增/編輯 Modal -->
+<div class="modal-bg" id="modal-user">
+  <div class="modal">
+    <h3 id="modal-title">新增帳號</h3>
+    <div class="msg" id="modal-msg"></div>
+    <div class="field"><label>帳號 *</label><input id="m-username" placeholder="英文或數字，不可重複"></div>
+    <div class="field" id="m-pass-field"><label>密碼 * （至少 8 字元）</label><input type="password" id="m-password" placeholder="請設定密碼"></div>
+    <div class="field"><label>姓名 *</label><input id="m-name" placeholder="顯示名稱"></div>
+    <div class="field"><label>Email</label><input type="email" id="m-email" placeholder="選填"></div>
+    <div class="field"><label>角色</label>
+      <select id="m-role">
+        <option value="viewer">viewer ─ 僅能查看</option>
+        <option value="sales">sales ─ 業務員（輸入+查看）</option>
+        <option value="admin">admin ─ 管理員（全部功能）</option>
+      </select>
+    </div>
+    <div class="field"><label>部門</label><input id="m-dept" placeholder="選填"></div>
+    <div class="field" id="m-status-field" style="display:none"><label>狀態</label>
+      <select id="m-status">
+        <option value="active">active ─ 正常</option>
+        <option value="disabled">disabled ─ 停用</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost" onclick="closeModal('modal-user')">取消</button>
+      <button class="btn primary" onclick="saveUser()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 重設密碼 Modal -->
+<div class="modal-bg" id="modal-reset">
+  <div class="modal">
+    <h3>重設密碼 ─ <span id="reset-name"></span></h3>
+    <div class="field"><label>新密碼 *（至少 8 字元）</label><input type="password" id="reset-pass" placeholder="請輸入新密碼"></div>
+    <div class="modal-actions">
+      <button class="ghost" onclick="closeModal('modal-reset')">取消</button>
+      <button class="btn primary" onclick="confirmReset()">確認重設</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const token = localStorage.getItem('crm_token');
+  const user  = JSON.parse(localStorage.getItem('crm_user') || '{}');
+
+  // 驗證：需要管理員
+  if (!token) { window.location.href = '/login.html'; }
+  else if (user.role !== 'admin') {
+    alert('此頁面需要管理員權限');
+    window.location.href = '/';
+  } else {
+    document.getElementById('user-info').textContent =
+      `管理員：${user.name} (${user.username})`;
+  }
+
+  const api = (path, opt = {}) =>
+    fetch(path, {
+      ...opt,
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}`, ...(opt.headers || {}) },
+    }).then(r => r.json());
+
+  // ── 頁籤切換 ────────────────────────────────────────────
+  function showTab(tab) {
+    document.querySelectorAll('.tab').forEach((el, i) =>
+      el.classList.toggle('active', ['users','logs','sync'][i] === tab));
+    document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    if (tab === 'users') loadUsers();
+    if (tab === 'logs')  loadLogs();
+    if (tab === 'sync')  loadSync();
+  }
+
+  // ── 帳號列表 ────────────────────────────────────────────
+  let users = [], editId = null, resetId = null;
+
+  async function loadUsers() {
+    users = await api('/api/admin/users');
+    const total    = users.length;
+    const admins   = users.filter(u => u.role === 'admin').length;
+    const active   = users.filter(u => u.status === 'active').length;
+    const disabled = users.filter(u => u.status !== 'active').length;
+    document.getElementById('stats').innerHTML = [
+      ['總帳號數', total,   'var(--cyan)',   'var(--cyan)'],
+      ['管理員',   admins,  'var(--gold)',   'var(--gold)'],
+      ['正常帳號', active,  'var(--green)',  'var(--green)'],
+      ['停用/鎖定',disabled,'var(--red)',    'var(--red)'],
+    ].map(([lbl,val,accent]) =>
+      `<div class="stat" style="--accent:${accent}"><div class="val">${val}</div><div class="lbl">${lbl}</div></div>`
+    ).join('');
+
+    document.getElementById('user-tbody').innerHTML = users.map(u => `
+      <tr>
+        <td style="color:var(--muted)">${u.id}</td>
+        <td style="font-weight:700">${u.username}</td>
+        <td>${u.name}</td>
+        <td style="color:var(--muted)">${u.dept || '-'}</td>
+        <td><span class="badge role-${u.role}">${u.role}</span></td>
+        <td><span class="badge status-${u.status}">${u.status}</span></td>
+        <td style="color:var(--muted)">${u.last_login ? new Date(u.last_login).toLocaleString('zh-TW') : '未登入'}</td>
+        <td style="color:var(--muted)">${new Date(u.created_at).toLocaleDateString('zh-TW')}</td>
+        <td>
+          <div class="act-btns">
+            <button class="act-btn act-edit"    onclick="openEdit(${u.id})">編輯</button>
+            <button class="act-btn act-reset"   onclick="openReset(${u.id})">重設密碼</button>
+            ${u.status === 'locked' ? `<button class="act-btn act-unlock" onclick="unlockUser(${u.id})">解鎖</button>` : ''}
+            ${u.id !== parseInt(user.id) ? `<button class="act-btn act-delete" onclick="deleteUser(${u.id},'${u.username}')">刪除</button>` : ''}
+          </div>
+        </td>
+      </tr>`).join('') || `<tr><td colspan="9" class="empty">尚無帳號</td></tr>`;
+  }
+
+  // ── 新增 Modal ──────────────────────────────────────────
+  function openCreate() {
+    editId = null;
+    document.getElementById('modal-title').textContent = '新增帳號';
+    ['m-username','m-password','m-name','m-email','m-dept'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('m-role').value   = 'viewer';
+    document.getElementById('m-status').value = 'active';
+    document.getElementById('m-username').disabled   = false;
+    document.getElementById('m-pass-field').style.display    = '';
+    document.getElementById('m-status-field').style.display  = 'none';
+    document.getElementById('modal-msg').style.display = 'none';
+    document.getElementById('modal-user').classList.add('show');
+  }
+
+  function openEdit(id) {
+    editId = id;
+    const u = users.find(x => x.id === id);
+    if (!u) return;
+    document.getElementById('modal-title').textContent = `編輯帳號 ─ ${u.username}`;
+    document.getElementById('m-username').value  = u.username;
+    document.getElementById('m-name').value      = u.name;
+    document.getElementById('m-email').value     = u.email || '';
+    document.getElementById('m-role').value      = u.role;
+    document.getElementById('m-dept').value      = u.dept || '';
+    document.getElementById('m-status').value    = u.status;
+    document.getElementById('m-username').disabled  = true;
+    document.getElementById('m-pass-field').style.display   = 'none';
+    document.getElementById('m-status-field').style.display = '';
+    document.getElementById('modal-msg').style.display = 'none';
+    document.getElementById('modal-user').classList.add('show');
+  }
+
+  async function saveUser() {
+    const body = {
+      username: document.getElementById('m-username').value.trim(),
+      password: document.getElementById('m-password').value,
+      name    : document.getElementById('m-name').value.trim(),
+      email   : document.getElementById('m-email').value.trim(),
+      role    : document.getElementById('m-role').value,
+      dept    : document.getElementById('m-dept').value.trim(),
+      status  : document.getElementById('m-status').value,
+    };
+    const msgEl = document.getElementById('modal-msg');
+    try {
+      const res = editId
+        ? await api(`/api/admin/users/${editId}`, { method: 'PUT', body: JSON.stringify(body) })
+        : await api('/api/admin/users',           { method: 'POST', body: JSON.stringify(body) });
+      if (res.ok || res.id) {
+        closeModal('modal-user');
+        showMsg('user-msg', editId ? '帳號更新成功' : '帳號新增成功', 'ok');
+        loadUsers();
+      } else {
+        msgEl.textContent = res.message || '操作失敗';
+        msgEl.className   = 'msg err';
+        msgEl.style.display = 'block';
+      }
+    } catch (e) {
+      msgEl.textContent   = '伺服器錯誤';
+      msgEl.className     = 'msg err';
+      msgEl.style.display = 'block';
+    }
+  }
+
+  // ── 重設密碼 Modal ──────────────────────────────────────
+  function openReset(id) {
+    resetId = id;
+    const u = users.find(x => x.id === id);
+    document.getElementById('reset-name').textContent = u?.username || '';
+    document.getElementById('reset-pass').value = '';
+    document.getElementById('modal-reset').classList.add('show');
+  }
+
+  async function confirmReset() {
+    const newPass = document.getElementById('reset-pass').value;
+    if (newPass.length < 8) { alert('密碼至少需要 8 個字元'); return; }
+    const res = await api(`/api/admin/users/${resetId}/reset-password`, {
+      method: 'POST', body: JSON.stringify({ newPassword: newPass }),
+    });
+    if (res.ok) {
+      closeModal('modal-reset');
+      showMsg('user-msg', '密碼重設成功', 'ok');
+    } else {
+      alert(res.message || '重設失敗');
+    }
+  }
+
+  // ── 其他操作 ────────────────────────────────────────────
+  async function unlockUser(id) {
+    if (!confirm('確認解除鎖定？')) return;
+    const res = await api(`/api/admin/users/${id}/unlock`, { method: 'POST' });
+    if (res.ok) { showMsg('user-msg', '已解除鎖定', 'ok'); loadUsers(); }
+  }
+
+  async function deleteUser(id, username) {
+    if (!confirm(`確認刪除帳號「${username}」？此操作無法復原！`)) return;
+    const res = await api(`/api/admin/users/${id}`, { method: 'DELETE' });
+    if (res.ok) { showMsg('user-msg', '帳號已刪除', 'ok'); loadUsers(); }
+    else alert(res.message || '刪除失敗');
+  }
+
+  // ── 登入記錄 ────────────────────────────────────────────
+  async function loadLogs() {
+    const logs = await api('/api/admin/login-logs');
+    document.getElementById('log-tbody').innerHTML =
+      (Array.isArray(logs) ? logs : []).map(l => `
+        <tr>
+          <td style="color:var(--muted)">${new Date(l.created_at).toLocaleString('zh-TW')}</td>
+          <td>${l.username}</td>
+          <td style="color:var(--muted)">${l.ip || '-'}</td>
+          <td><span class="log-status-${l.status}">${l.status}</span></td>
+          <td style="color:var(--muted)">${l.reason || '-'}</td>
+        </tr>`).join('') || `<tr><td colspan="5" class="empty">尚無記錄</td></tr>`;
+  }
+
+  // ── 同步記錄 ────────────────────────────────────────────
+  async function loadSync() {
+    const logs = await api('/api/admin/sync-logs');
+    document.getElementById('sync-tbody').innerHTML =
+      (Array.isArray(logs) ? logs : []).map(l => `
+        <tr>
+          <td style="color:var(--muted)">${new Date(l.synced_at).toLocaleString('zh-TW')}</td>
+          <td>${l.sheet_name}</td>
+          <td style="color:var(--teal)">${l.rows_synced}</td>
+          <td><span class="log-status-${l.status}">${l.status}</span></td>
+          <td style="color:var(--muted);font-size:11px">${l.message || '-'}</td>
+        </tr>`).join('') || `<tr><td colspan="5" class="empty">尚無同步記錄</td></tr>`;
+  }
+
+  async function syncNow() {
+    const msgEl = document.getElementById('sync-msg');
+    msgEl.textContent = '⏳ 同步中...';
+    try {
+      const res = await api('/api/admin/sync-now', { method: 'POST' });
+      msgEl.textContent = res.ok ? '✅ 同步成功！' : `❌ ${res.message}`;
+      if (res.ok) loadSync();
+    } catch (e) {
+      msgEl.textContent = '❌ 同步失敗';
+    }
+  }
+
+  // ── 工具函式 ────────────────────────────────────────────
+  function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+  function showMsg(id, text, type) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = `msg ${type}`;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+  }
+
+  function logout() {
+    fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    }).finally(() => {
+      localStorage.removeItem('crm_token');
+      localStorage.removeItem('crm_user');
+      window.location.href = '/login.html';
+    });
+  }
+
+  // 點擊背景關閉 Modal
+  document.querySelectorAll('.modal-bg').forEach(bg =>
+    bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('show'); })
+  );
+
+  // 初始載入
+  loadUsers();
+</script>
+</body>
+</html>
