@@ -10,6 +10,9 @@ const { syncAll, startSchedule } = require('./sync');
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const SYNC_COOLDOWN_MS = Number(process.env.SYNC_COOLDOWN_MS) || 15000;
+let syncInFlight = null;
+let lastSyncAt = 0;
 
 app.use(cors());
 app.use(express.json());
@@ -45,10 +48,47 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString(), version: '2.0' });
 });
 
+async function runSync(triggerLabel) {
+  if (syncInFlight) {
+    return syncInFlight;
+  }
+
+  const now = Date.now();
+  if (now - lastSyncAt < SYNC_COOLDOWN_MS) {
+    return {
+      ok: true,
+      skipped: true,
+      cooldownMs: SYNC_COOLDOWN_MS,
+      elapsedMs: now - lastSyncAt,
+    };
+  }
+
+  syncInFlight = (async () => {
+    try {
+      console.log(`Sync triggered by ${triggerLabel}`);
+      const result = await syncAll();
+      lastSyncAt = Date.now();
+      return { ok: true, skipped: false, result };
+    } finally {
+      syncInFlight = null;
+    }
+  })();
+
+  return syncInFlight;
+}
+
+app.post('/api/sync-now', require('./auth').requireAuth, async (req, res) => {
+  try {
+    const result = await runSync(`${req.user.username} (user)`);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'sync_failed', message: err.message });
+  }
+});
+
 app.post('/api/admin/sync-now', requireAdmin, async (req, res) => {
   try {
-    console.log(`Manual sync triggered by ${req.user.username}`);
-    const result = await syncAll();
+    const result = await runSync(`${req.user.username} (admin)`);
     res.json({ ok: true, result });
   } catch (err) {
     res.status(500).json({ error: 'sync_failed', message: err.message });
