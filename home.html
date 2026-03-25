@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>企業營運平台</title>
+  <style>
+    :root{--bg:#07111f;--panel:#0f1c2f;--line:#1f3b60;--text:#e9f2ff;--muted:#88a4c9;--gold:#ffb938;--teal:#14d5c1;--cyan:#46a6ff;--orange:#ff914d}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:
+      radial-gradient(circle at top left, rgba(70,166,255,.22), transparent 28%),
+      radial-gradient(circle at top right, rgba(255,185,56,.16), transparent 25%),
+      linear-gradient(180deg,#07111f,#091423 65%,#08111d);
+      color:var(--text);font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif}
+    .wrap{width:min(1180px,calc(100vw - 28px));margin:0 auto;padding:28px 0 36px}
+    .hero,.card{background:rgba(15,28,47,.95);border:1px solid var(--line);border-radius:24px;box-shadow:0 18px 42px rgba(0,0,0,.24)}
+    .hero{padding:26px 28px;margin-bottom:18px}
+    .topline,.actions,.grid{display:flex;gap:12px;flex-wrap:wrap}
+    .topline{justify-content:space-between;align-items:center}
+    .brand{display:flex;gap:14px;align-items:center}
+    .mark{width:54px;height:54px;border-radius:18px;background:linear-gradient(135deg,#173250,#0f2040);display:grid;place-items:center;color:var(--gold);font-size:24px}
+    h1,h2,h3,p{margin:0}
+    h1{font-size:28px}
+    .meta,.sub{color:var(--muted)}
+    .meta{font-size:13px;margin-top:6px}
+    .actions button,.link-btn{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer}
+    .actions button.primary,.link-btn.primary{background:linear-gradient(135deg,var(--gold),#ff9340);color:#07111f;border-color:transparent}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+    .card{padding:24px}
+    .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:#11243d;color:var(--muted);font-size:12px;font-weight:700}
+    .service-title{font-size:24px;margin:16px 0 10px}
+    .service-desc{color:var(--muted);line-height:1.7;min-height:76px}
+    .pill-row{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+    .pill{padding:7px 10px;border-radius:999px;border:1px solid #28476d;color:#bdd0ec;font-size:12px}
+    .cta{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .status{font-size:12px;color:var(--muted)}
+    .footer{margin-top:18px;padding:18px 4px 0;color:var(--muted);font-size:12px;text-align:center}
+    @media (max-width:860px){.grid{grid-template-columns:1fr}.hero{padding:22px}.card{padding:20px}}
+  </style>
+  <script>
+    (function(){
+      const token = localStorage.getItem('crm_token');
+      if (!token) {
+        window.location.href = '/login.html';
+        return;
+      }
+      const rawFetch = window.fetch;
+      window.fetch = function(url, opt) {
+        opt = opt || {};
+        opt.headers = Object.assign({}, opt.headers, { Authorization: 'Bearer ' + token });
+        return rawFetch(url, opt).then(function(response) {
+          if (response.status === 401) {
+            localStorage.removeItem('crm_token');
+            localStorage.removeItem('crm_user');
+            window.location.href = '/login.html';
+          }
+          return response;
+        });
+      };
+    })();
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="topline">
+        <div class="brand">
+          <div class="mark">□</div>
+          <div>
+            <h1>企業營運平台</h1>
+            <div class="meta">以模組化服務整合 CRM、庫存與後續擴充功能</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button onclick="window.location.href='/admin.html'">帳號管理</button>
+          <button onclick="crmLogout()">登出</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="eyebrow">CRM 管理服務</div>
+        <h2 class="service-title">客戶、銷售、訂單與 KPI 分析</h2>
+        <p class="service-desc">延用目前既有的 CRM 儀表板與原始資料檢視，包含同步 Google Sheets、KPI 指標、客戶篩選、原始資料與帳號登入權限。</p>
+        <div class="pill-row">
+          <span class="pill">客戶管理</span>
+          <span class="pill">銷售漏斗</span>
+          <span class="pill">月度營收</span>
+          <span class="pill">原始資料</span>
+        </div>
+        <div class="cta">
+          <div class="status">目前主系統，功能已上線</div>
+          <button class="link-btn primary" onclick="window.location.href='/crm.html'">進入 CRM</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">庫存管理系統</div>
+        <h2 class="service-title">商品、庫存異動與低庫存警示</h2>
+        <p class="service-desc">預留給即將整合的庫存模組，未來可獨立承接商品主檔、進出庫、低庫存提醒、庫存 KPI，以及與 CRM 訂單的關聯。</p>
+        <div class="pill-row">
+          <span class="pill">商品主檔</span>
+          <span class="pill">進出庫明細</span>
+          <span class="pill">低庫存警示</span>
+          <span class="pill">後續擴充</span>
+        </div>
+        <div class="cta">
+          <div class="status">模組入口已建立，待匯入資料文件後整合</div>
+          <button class="link-btn" onclick="window.location.href='/inventory.html'">進入庫存系統</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">後續新增採購、報價、財務、售後服務等模組時，也可以沿用相同的服務入口架構。</div>
+  </div>
+  <script>
+    function crmLogout() {
+      fetch('/api/auth/logout', { method: 'POST' }).finally(function() {
+        localStorage.removeItem('crm_token');
+        localStorage.removeItem('crm_user');
+        window.location.href = '/login.html';
+      });
+    }
+  </script>
+</body>
+</html>

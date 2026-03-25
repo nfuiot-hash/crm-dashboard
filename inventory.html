@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>庫存管理系統</title>
+  <style>
+    :root{--bg:#08111d;--panel:#0f1c2f;--line:#1f3b60;--text:#e9f2ff;--muted:#88a4c9;--gold:#ffb938;--teal:#14d5c1}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:linear-gradient(180deg,#08111d,#091423);color:var(--text);font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif}
+    .wrap{width:min(980px,calc(100vw - 28px));margin:0 auto;padding:28px 0}
+    .card{background:rgba(15,28,47,.96);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 18px 42px rgba(0,0,0,.24)}
+    .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+    .mark{width:52px;height:52px;border-radius:18px;background:#173250;color:var(--gold);display:grid;place-items:center;font-size:24px}
+    .brand{display:flex;align-items:center;gap:14px}
+    h1,h2,p{margin:0}
+    .muted{color:var(--muted)}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+    .mini{padding:18px;border:1px solid #28476d;border-radius:18px;background:#10213a}
+    .num{font-size:28px;font-weight:900;color:var(--teal);margin:10px 0 6px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer}
+    .btn.primary{background:linear-gradient(135deg,var(--gold),#ff9340);color:#07111f;border-color:transparent}
+    .note{margin-top:18px;line-height:1.8}
+    @media (max-width:760px){.grid{grid-template-columns:1fr}}
+  </style>
+  <script>
+    (function(){
+      const token = localStorage.getItem('crm_token');
+      if (!token) {
+        window.location.href = '/login.html';
+      }
+    })();
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div class="brand">
+          <div class="mark">△</div>
+          <div>
+            <h1>庫存管理系統</h1>
+            <p class="muted">模組入口已建立，等待匯入資料文件後接續整合</p>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn" onclick="window.location.href='/'">返回首頁</button>
+          <button class="btn primary" onclick="window.location.href='/crm.html'">前往 CRM</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="mini">
+          <div class="muted">模組狀態</div>
+          <div class="num">Ready</div>
+          <div class="muted">前端入口與系統定位已建立</div>
+        </div>
+        <div class="mini">
+          <div class="muted">下一步</div>
+          <div class="num">Schema</div>
+          <div class="muted">等待商品與庫存資料欄位後建立資料表</div>
+        </div>
+        <div class="mini">
+          <div class="muted">整合方向</div>
+          <div class="num">Link</div>
+          <div class="muted">可與 CRM 訂單、客戶、業務關聯</div>
+        </div>
+      </div>
+
+      <p class="note muted">建議後續依序接入商品主檔、進出庫明細、低庫存警示、庫存 KPI 與原始資料頁。你把資料文件貼上後，我可以直接從這個模組往下實作。</p>
+    </div>
+  </div>
+</body>
+</html>

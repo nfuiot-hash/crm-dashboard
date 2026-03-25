@@ -1,3 +1,14 @@
 node_modules/
-credentials.json
 .env
+.env.local
+.env.production
+credentials.json
+*.log
+*.zip
+*.rar
+*.tmp
+*.bak
+.DS_Store
+Thumbs.db
+.nev
+新文字文件.txt

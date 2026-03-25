@@ -39,6 +39,8 @@ function sendPage(res, ...relativePaths) {
 
 app.get('/login.html', (req, res) => sendPage(res, 'login.html', 'public/login.html'));
 app.get('/admin.html', (req, res) => sendPage(res, 'admin.html', 'public/admin.html'));
+app.get('/crm.html', (req, res) => sendPage(res, 'index.html', 'public/index.html'));
+app.get('/inventory.html', (req, res) => sendPage(res, 'inventory.html', 'public/inventory.html'));
 
 app.use('/api/auth', require('./authRoutes'));
 app.use('/api/admin', require('./adminRoutes'));
@@ -99,7 +101,7 @@ app.get('*', (req, res) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'not_found' });
   }
-  return sendPage(res, 'index.html', 'public/index.html');
+  return sendPage(res, 'home.html', 'index.html', 'public/home.html', 'public/index.html');
 });
 
 async function start() {
@@ -113,7 +115,9 @@ async function start() {
     console.log('\n================================');
     console.log('  CRM Dashboard v2.0 started');
     console.log('================================');
-    console.log(`  Dashboard: http://localhost:${PORT}`);
+    console.log(`  Home:      http://localhost:${PORT}`);
+    console.log(`  CRM:       http://localhost:${PORT}/crm.html`);
+    console.log(`  Inventory: http://localhost:${PORT}/inventory.html`);
     console.log(`  Login:     http://localhost:${PORT}/login.html`);
     console.log(`  Admin:     http://localhost:${PORT}/admin.html`);
     console.log(`  API:       http://localhost:${PORT}/api/health`);
