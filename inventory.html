@@ -5,71 +5,850 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>庫存管理系統</title>
   <style>
-    :root{--bg:#08111d;--panel:#0f1c2f;--line:#1f3b60;--text:#e9f2ff;--muted:#88a4c9;--gold:#ffb938;--teal:#14d5c1}
-    *{box-sizing:border-box}
-    body{margin:0;min-height:100vh;background:linear-gradient(180deg,#08111d,#091423);color:var(--text);font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif}
-    .wrap{width:min(980px,calc(100vw - 28px));margin:0 auto;padding:28px 0}
-    .card{background:rgba(15,28,47,.96);border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 18px 42px rgba(0,0,0,.24)}
-    .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-    .mark{width:52px;height:52px;border-radius:18px;background:#173250;color:var(--gold);display:grid;place-items:center;font-size:24px}
-    .brand{display:flex;align-items:center;gap:14px}
-    h1,h2,p{margin:0}
-    .muted{color:var(--muted)}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
-    .mini{padding:18px;border:1px solid #28476d;border-radius:18px;background:#10213a}
-    .num{font-size:28px;font-weight:900;color:var(--teal);margin:10px 0 6px}
-    .actions{display:flex;gap:10px;flex-wrap:wrap}
-    .btn{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:10px 16px;font-weight:700;cursor:pointer}
-    .btn.primary{background:linear-gradient(135deg,var(--gold),#ff9340);color:#07111f;border-color:transparent}
-    .note{margin-top:18px;line-height:1.8}
-    @media (max-width:760px){.grid{grid-template-columns:1fr}}
+    :root {
+      --bg: #07111f;
+      --panel: #0f1c2f;
+      --panel-soft: #10213a;
+      --line: #1f3b60;
+      --text: #e9f2ff;
+      --muted: #88a4c9;
+      --gold: #ffb938;
+      --gold2: #ff9340;
+      --cyan: #46a6ff;
+      --teal: #14d5c1;
+      --purple: #9d7cff;
+      --green: #1ee28b;
+      --red: #ff6687;
+      --yellow: #ffcf6a;
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.24);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(70, 166, 255, 0.18), transparent 28%),
+        linear-gradient(180deg, #07111f, #091423 65%, #08111d);
+      color: var(--text);
+      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    .wrap {
+      width: min(1480px, calc(100vw - 24px));
+      margin: 0 auto;
+      padding: 16px 0 28px;
+    }
+
+    .card, .panel, .table-wrap {
+      background: rgba(15, 28, 47, 0.96);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .top {
+      padding: 18px 20px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .brand, .actions, .tabs, .chip-row, .filter-row, .chart-legend {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .brand { gap: 12px; }
+    .mark {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: #173250;
+      color: var(--gold);
+      font-weight: 900;
+      font-size: 20px;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 22px; }
+    h2 { font-size: 20px; margin-bottom: 10px; }
+    h3 { font-size: 16px; margin-bottom: 8px; }
+
+    .meta, .hint, .muted, .subcopy {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .tabs button, .ghost, .chip {
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tabs button.active, .chip.active {
+      background: linear-gradient(135deg, var(--gold), var(--gold2));
+      color: #07111f;
+      border-color: transparent;
+    }
+
+    .toolbar {
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid #2e5485;
+      background: var(--panel-soft);
+      color: var(--text);
+      outline: none;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .kpi {
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      border-top: 3px solid var(--accent);
+      background: rgba(15, 28, 47, 0.96);
+    }
+
+    .kpi .value {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--accent);
+    }
+
+    .kpi .title, .kpi .desc {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 12px;
+    }
+
+    .grid3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .water-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .panel {
+      padding: 16px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .stat-item, .alert-item, .supplier-item, .variance-row {
+      padding: 12px 14px;
+      border: 1px solid #28476d;
+      border-radius: 14px;
+      background: var(--panel-soft);
+    }
+
+    .item-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .item-sub {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .track {
+      height: 9px;
+      background: #243f64;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .fill {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--teal), var(--cyan));
+    }
+
+    .ring-row {
+      display: grid;
+      grid-template-columns: minmax(180px, 220px) 1fr;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .donut {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      position: relative;
+      margin: 0 auto;
+      background: conic-gradient(var(--cyan) 0deg 360deg);
+    }
+
+    .donut::after {
+      content: "";
+      position: absolute;
+      inset: 22px;
+      border-radius: 50%;
+      background: #0f1c2f;
+      border: 1px solid #27476f;
+    }
+
+    .legend {
+      display: grid;
+      gap: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #d6e4f9;
+      font-size: 13px;
+    }
+
+    .legend-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .legend-pill span, .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .dot { border-radius: 50%; }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .svg-chart {
+      width: 100%;
+      height: 240px;
+      display: block;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid #28476d;
+      border-radius: 16px;
+      background: rgba(15, 28, 47, 0.96);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 920px;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid #223956;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #10233c;
+      color: var(--gold);
+      font-size: 12px;
+    }
+
+    tr:nth-child(even) td { background: rgba(255, 255, 255, 0.02); }
+
+    .badge {
+      display: inline-flex;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .badge.low { background: rgba(255, 102, 135, 0.16); color: var(--red); }
+    .badge.safe { background: rgba(30, 226, 139, 0.16); color: var(--green); }
+    .badge.warn { background: rgba(255, 185, 56, 0.16); color: var(--gold); }
+
+    .empty {
+      padding: 28px 14px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    @media (max-width: 1200px) {
+      .filters-grid, .summary, .grid2, .grid3, .water-grid, .ring-row, .chart-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
   <script>
-    (function(){
+    (function () {
       const token = localStorage.getItem('crm_token');
       if (!token) {
         window.location.href = '/login.html';
+        return;
       }
+
+      const rawFetch = window.fetch;
+      window.fetch = function (url, options) {
+        options = options || {};
+        options.headers = Object.assign({}, options.headers, {
+          Authorization: 'Bearer ' + token
+        });
+        return rawFetch(url, options).then(function (response) {
+          if (response.status === 401) {
+            localStorage.removeItem('crm_token');
+            localStorage.removeItem('crm_user');
+            window.location.href = '/login.html';
+          }
+          return response;
+        });
+      };
     })();
   </script>
 </head>
 <body>
   <div class="wrap">
-    <div class="card">
-      <div class="top">
-        <div class="brand">
-          <div class="mark">△</div>
-          <div>
-            <h1>庫存管理系統</h1>
-            <p class="muted">模組入口已建立，等待匯入資料文件後接續整合</p>
+    <div class="card top">
+      <div class="brand">
+        <div class="mark">庫</div>
+        <div>
+          <h1>庫存管理系統</h1>
+          <div class="meta" id="conn-status">正在讀取庫存資料...</div>
+        </div>
+      </div>
+      <div class="actions">
+        <div class="tabs">
+          <button class="active" data-tab="overview">總覽</button>
+          <button data-tab="kpi">KPI分析</button>
+          <button data-tab="raw">原始資料</button>
+          <button onclick="window.location.href='/'">返回首頁</button>
+        </div>
+        <button class="ghost" id="reload-btn">重新載入</button>
+      </div>
+    </div>
+
+    <div class="card toolbar">
+      <div class="filters-grid">
+        <div class="field">
+          <label>搜尋</label>
+          <input id="search" placeholder="零件編號、零件名稱、規格、儲位">
+        </div>
+        <div class="field">
+          <label>類別</label>
+          <select id="category"></select>
+        </div>
+        <div class="field">
+          <label>供應商</label>
+          <select id="supplier-filter"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary" id="summary"></div>
+
+    <div class="section active" id="section-overview">
+      <div class="grid2">
+        <div class="panel">
+          <h2>零件庫存水位狀態</h2>
+          <p class="subcopy">快速查看零件安全庫存、低庫存與採購中水位，掌握目前料件缺口。</p>
+          <div class="water-grid" id="parts-water"></div>
+        </div>
+        <div class="panel">
+          <h2>低庫存警報</h2>
+          <p class="subcopy">優先列出可用庫存低於安全庫存的零件，協助補貨排序。</p>
+          <div class="stack" id="low-stock-list"></div>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-top:12px;">
+        <div class="panel">
+          <h2>零件類別金額占比</h2>
+          <p class="subcopy">依零件類別加總庫存金額，快速看出資金主要集中在哪些料件群。</p>
+          <div class="ring-row">
+            <div class="donut" id="category-donut"></div>
+            <div class="legend" id="category-legend"></div>
           </div>
         </div>
-        <div class="actions">
-          <button class="btn" onclick="window.location.href='/'">返回首頁</button>
-          <button class="btn primary" onclick="window.location.href='/crm.html'">前往 CRM</button>
+        <div class="panel">
+          <h2>成品銷售狀態</h2>
+          <p class="subcopy">彙整成品目前的在庫、已售與維修中狀態，協助判讀銷售與售後壓力。</p>
+          <div class="stack" id="finished-status-list"></div>
         </div>
       </div>
 
-      <div class="grid">
-        <div class="mini">
-          <div class="muted">模組狀態</div>
-          <div class="num">Ready</div>
-          <div class="muted">前端入口與系統定位已建立</div>
+      <div class="panel" style="margin-top:12px;">
+        <h2>成品庫存水位狀態</h2>
+        <p class="subcopy">以中文型號名稱呈現成品在庫與已售數量，讓熱銷機型一眼可見。</p>
+        <div class="grid3" id="finished-water-grid"></div>
+      </div>
+    </div>
+
+    <div class="section" id="section-kpi">
+      <div class="grid2">
+        <div class="panel">
+          <h2>供應鏈評價</h2>
+          <p class="subcopy">以供應商評分、交期與訂單履約狀態綜合計算，快速辨識穩定供應商。</p>
+          <div class="stack" id="supplier-list"></div>
         </div>
-        <div class="mini">
-          <div class="muted">下一步</div>
-          <div class="num">Schema</div>
-          <div class="muted">等待商品與庫存資料欄位後建立資料表</div>
-        </div>
-        <div class="mini">
-          <div class="muted">整合方向</div>
-          <div class="num">Link</div>
-          <div class="muted">可與 CRM 訂單、客戶、業務關聯</div>
+        <div class="panel">
+          <h2>採購進度狀態</h2>
+          <p class="subcopy">追蹤採購紀錄目前的狀態分佈，避免補貨流程中斷。</p>
+          <div class="stack" id="purchase-status-list"></div>
         </div>
       </div>
 
-      <p class="note muted">建議後續依序接入商品主檔、進出庫明細、低庫存警示、庫存 KPI 與原始資料頁。你把資料文件貼上後，我可以直接從這個模組往下實作。</p>
+      <div class="grid2" style="margin-top:12px;">
+        <div class="panel">
+          <h2>庫存零件盤點差異率</h2>
+          <p class="subcopy">使用圖示化方式呈現異常筆數、缺件筆數與平均差異率，快速看出盤點風險。</p>
+          <div class="chart-legend" style="margin-bottom:12px;">
+            <div class="legend-pill"><span style="background:var(--red)"></span>異常筆數</div>
+            <div class="legend-pill"><span style="background:var(--gold)"></span>缺件筆數</div>
+            <div class="legend-pill"><span style="background:var(--cyan)"></span>平均差異率</div>
+          </div>
+          <div class="chart-grid">
+            <svg class="svg-chart" id="stocktake-overview-chart" viewBox="0 0 520 240" preserveAspectRatio="none"></svg>
+            <div class="ring-row" style="grid-template-columns:minmax(180px,220px) 1fr;">
+              <div class="donut" id="stocktake-donut"></div>
+              <div class="legend" id="stocktake-donut-legend"></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>盤點差異明細</h2>
+          <p class="subcopy">只顯示差異率最高的少數零件，並把顯示範圍限制在 0% 到 100%。</p>
+          <svg class="svg-chart" id="stocktake-detail-chart" viewBox="0 0 520 240" preserveAspectRatio="none" style="margin-bottom:12px;"></svg>
+          <div class="stack" id="stocktake-top-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="section-raw">
+      <div class="panel" style="margin-bottom:12px;">
+        <div class="chip-row" id="raw-sheet-buttons" style="margin-bottom:14px;"></div>
+        <div class="hint" id="raw-meta"></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead id="raw-head"></thead>
+          <tbody id="raw-body"></tbody>
+        </table>
+      </div>
     </div>
   </div>
+
+  <script>
+    const RAW = {};
+    const STATE = { tab: 'overview', rawKey: 'parts_stock' };
+    const SHEET_LABELS = {
+      parts_stock: '零件庫存',
+      purchase_records: '零件採購紀錄',
+      suppliers: '供應商',
+      stock_movements: '零件入出庫記錄',
+      stocktake: '零件盤點',
+      finished_goods: '成品庫存',
+      product_models: '成品型號'
+    };
+
+    let summary = null;
+    let filteredParts = [];
+
+    const $ = (id) => document.getElementById(id);
+    const text = (value) => String(value ?? '').trim();
+    const num = (value) => {
+      const n = Number(value || 0);
+      return Number.isFinite(n) ? n : 0;
+    };
+    const formatAmount = (value) => {
+      const n = num(value);
+      return Math.abs(n) >= 10000 ? (n / 10000).toFixed(1) + '萬' : n.toLocaleString('zh-TW');
+    };
+
+    function buildFilters(parts, suppliers) {
+      const categories = [...new Set(parts.map((item) => item.category).filter(Boolean))].sort();
+      const supplierNames = [...new Set(suppliers.map((item) => item.name).filter(Boolean))].sort();
+
+      $('category').innerHTML = '<option value="">全部</option>' + categories.map((item) => '<option value="' + item + '">' + item + '</option>').join('');
+      $('supplier-filter').innerHTML = '<option value="">全部供應商</option>' + supplierNames.map((item) => '<option value="' + item + '">' + item + '</option>').join('');
+
+      $('raw-sheet-buttons').innerHTML = Object.entries(SHEET_LABELS).map(([key, label]) =>
+        '<button class="chip' + (key === STATE.rawKey ? ' active' : '') + '" type="button" data-raw-sheet="' + key + '">' + label + '</button>'
+      ).join('');
+
+      document.querySelectorAll('[data-raw-sheet]').forEach((button) => {
+        button.addEventListener('click', function () {
+          STATE.rawKey = button.dataset.rawSheet;
+          document.querySelectorAll('[data-raw-sheet]').forEach((node) => node.classList.toggle('active', node === button));
+          renderRawTable();
+        });
+      });
+    }
+
+    function applyFilters() {
+      const search = text($('search').value).toLowerCase();
+      const category = $('category').value;
+      const supplierName = $('supplier-filter').value;
+
+      filteredParts = (summary.normalized.parts || []).filter((item) => {
+        const haystack = [item.code, item.name, item.spec, item.location, item.modelCodes].join(' ').toLowerCase();
+        if (search && !haystack.includes(search)) return false;
+        if (category && item.category !== category) return false;
+        return true;
+      });
+
+      renderSummary();
+      renderOverview();
+      renderKpi(supplierName);
+    }
+
+    function renderSummary() {
+      const totalPartAsset = filteredParts.reduce((sum, item) => sum + item.stockValue, 0);
+      const lowStockCount = filteredParts.filter((item) => item.available <= item.safetyStock).length;
+      const cards = [
+        ['零件庫存總值', formatAmount(totalPartAsset), '零件庫存金額合計', 'var(--gold)'],
+        ['低庫存警報', lowStockCount, '可用庫存低於安全庫存', 'var(--red)'],
+        ['零件 SKU', filteredParts.length, '目前篩選後零件數量', 'var(--cyan)'],
+        ['成品總數', summary.cards.totalFinishedGoods, '成品庫存總筆數', 'var(--purple)'],
+        ['已售成品', summary.cards.soldFinishedGoods, '成品已售狀態筆數', 'var(--teal)'],
+        ['盤點筆數', summary.cards.stocktakeCount, '零件盤點總筆數', 'var(--yellow)']
+      ];
+
+      $('summary').innerHTML = cards.map((card) =>
+        '<div class="kpi" style="--accent:' + card[3] + '">' +
+          '<div class="value">' + card[1] + '</div>' +
+          '<div class="title">' + card[0] + '</div>' +
+          '<div class="desc">' + card[2] + '</div>' +
+        '</div>'
+      ).join('');
+    }
+
+    function renderDonut(targetId, legendId, items) {
+      const top = items.slice(0, 5);
+      const total = Math.max(top.reduce((sum, item) => sum + item.value, 0), 1);
+      const colors = ['#46a6ff', '#14d5c1', '#ffb938', '#9d7cff', '#ff6d9f'];
+      let current = 0;
+      const stops = top.map((item, index) => {
+        const start = current;
+        current += (item.value / total) * 360;
+        return colors[index] + ' ' + start + 'deg ' + current + 'deg';
+      });
+
+      $(targetId).style.background = stops.length ? 'conic-gradient(' + stops.join(',') + ')' : '#17314f';
+      $(legendId).innerHTML = top.map((item, index) =>
+        '<div class="legend-item"><span class="dot" style="background:' + colors[index] + '"></span><span>' +
+          item.label + ' · ' + (item.count ?? item.value) +
+        '</span></div>'
+      ).join('');
+    }
+
+    function renderStocktakeOverviewChart() {
+      const width = 520;
+      const height = 240;
+      const padding = 36;
+      const avgDiffPercent = Math.min(Math.abs(summary.stocktakeMetrics.avgDiffRate || 0) * 100, 100);
+      const points = [
+        { label: '異常', value: summary.stocktakeMetrics.abnormalCount, color: '#ff6687' },
+        { label: '缺件', value: summary.stocktakeMetrics.missingCount, color: '#ffb938' },
+        { label: '差異率', value: Number(avgDiffPercent.toFixed(1)), color: '#46a6ff' }
+      ];
+      const innerHeight = height - padding * 2;
+      const maxValue = Math.max(...points.map((point) => point.value), 1);
+
+      let grid = '';
+      for (let i = 0; i <= 4; i += 1) {
+        const y = padding + (innerHeight / 4) * i;
+        grid += '<line x1="' + padding + '" y1="' + y + '" x2="' + (width - padding) + '" y2="' + y + '" stroke="#213957" stroke-width="1" />';
+      }
+
+      const bars = points.map((point, index) => {
+        const x = padding + 40 + index * 130;
+        const barWidth = 70;
+        const barHeight = (point.value / maxValue) * (innerHeight - 10);
+        const y = height - padding - barHeight;
+        return '<g>' +
+          '<rect x="' + x + '" y="' + y + '" width="' + barWidth + '" height="' + barHeight + '" rx="14" fill="' + point.color + '"></rect>' +
+          '<text x="' + (x + barWidth / 2) + '" y="' + (y - 8) + '" text-anchor="middle" fill="#dce9ff" font-size="12" font-weight="700">' + point.value + '</text>' +
+          '<text x="' + (x + barWidth / 2) + '" y="' + (height - 12) + '" text-anchor="middle" fill="#88a4c9" font-size="12">' + point.label + '</text>' +
+        '</g>';
+      }).join('');
+
+      $('stocktake-overview-chart').innerHTML = '<rect x="0" y="0" width="' + width + '" height="' + height + '" fill="transparent"></rect>' + grid + bars;
+    }
+
+    function renderStocktakeDetailChart() {
+      const width = 520;
+      const height = 240;
+      const padding = 40;
+      const items = (summary.stocktakeMetrics.topVariance || []).slice(0, 5).map((item) => ({
+        label: item.partName,
+        value: Math.min(Math.abs(item.diffRate || 0) * 100, 100),
+        diffQty: item.diffQty
+      }));
+
+      if (!items.length) {
+        $('stocktake-detail-chart').innerHTML =
+          '<rect x="0" y="0" width="' + width + '" height="' + height + '" fill="transparent"></rect>' +
+          '<text x="' + (width / 2) + '" y="' + (height / 2) + '" text-anchor="middle" fill="#88a4c9" font-size="14">目前沒有盤點差異資料</text>';
+        return;
+      }
+
+      const maxValue = Math.max(...items.map((item) => item.value), 1);
+      const innerWidth = width - padding * 2;
+      const innerHeight = height - padding * 2;
+
+      let grid = '';
+      for (let i = 0; i <= 4; i += 1) {
+        const y = padding + (innerHeight / 4) * i;
+        grid += '<line x1="' + padding + '" y1="' + y + '" x2="' + (width - padding) + '" y2="' + y + '" stroke="#213957" stroke-width="1" />';
+      }
+
+      const points = items.map((item, index) => {
+        const x = padding + (innerWidth / Math.max(items.length - 1, 1)) * index;
+        const y = height - padding - (item.value / maxValue) * innerHeight;
+        const color = item.diffQty < 0 ? '#ff6687' : item.diffQty > 0 ? '#ffb938' : '#1ee28b';
+        return { ...item, x, y, color };
+      });
+
+      const linePath = 'M ' + points.map((point) => point.x + ' ' + point.y).join(' L ');
+      const areaPath = linePath + ' L ' + points[points.length - 1].x + ' ' + (height - padding) + ' L ' + points[0].x + ' ' + (height - padding) + ' Z';
+      const labels = points.map((point) =>
+        '<text x="' + point.x + '" y="' + (height - 12) + '" text-anchor="middle" fill="#88a4c9" font-size="11">' + point.label.slice(0, 8) + '</text>'
+      ).join('');
+      const dots = points.map((point) =>
+        '<g>' +
+          '<circle cx="' + point.x + '" cy="' + point.y + '" r="6" fill="' + point.color + '"></circle>' +
+          '<text x="' + point.x + '" y="' + (point.y - 12) + '" text-anchor="middle" fill="#dce9ff" font-size="11" font-weight="700">' + point.value.toFixed(1) + '%</text>' +
+        '</g>'
+      ).join('');
+
+      $('stocktake-detail-chart').innerHTML =
+        '<rect x="0" y="0" width="' + width + '" height="' + height + '" fill="transparent"></rect>' +
+        grid +
+        '<path d="' + areaPath + '" fill="rgba(70,166,255,0.12)"></path>' +
+        '<path d="' + linePath + '" fill="none" stroke="#46a6ff" stroke-width="3"></path>' +
+        dots +
+        labels;
+    }
+
+    function renderOverview() {
+      const waterCards = [
+        ['安全零件', summary.partWaterLevel.safeCount, '可用庫存高於安全庫存', 'var(--green)'],
+        ['低庫存零件', summary.partWaterLevel.warningCount, '可用庫存低於安全庫存', 'var(--yellow)'],
+        ['零庫存零件', summary.partWaterLevel.zeroCount, '可用庫存已歸零', 'var(--red)'],
+        ['採購中數量', summary.partWaterLevel.totalInbound, '目前採購途中的數量', 'var(--cyan)']
+      ];
+
+      $('parts-water').innerHTML = waterCards.map((card) =>
+        '<div class="stat-item"><div class="item-head"><span>' + card[0] + '</span><span style="color:' + card[3] + '">' + card[1] + '</span></div><div class="item-sub">' + card[2] + '</div></div>'
+      ).join('');
+
+      $('low-stock-list').innerHTML = summary.partWaterLevel.lowStockParts.length
+        ? summary.partWaterLevel.lowStockParts.map((item) =>
+            '<div class="alert-item"><div class="item-head"><span>' + item.name + '</span><span class="badge low">可用 ' + item.available + '</span></div><div class="item-sub">' + item.code + ' · 安全庫存 ' + item.safetyStock + ' · 儲位 ' + (item.location || '-') + '</div></div>'
+          ).join('')
+        : '<div class="empty">目前沒有低庫存警報</div>';
+
+      renderDonut('category-donut', 'category-legend',
+        summary.partWaterLevel.categoryValueShare
+          .filter((item) => filteredParts.some((part) => part.category === item.label))
+          .slice(0, 5)
+      );
+
+      const maxStatus = Math.max(...summary.finishedGoodsWaterLevel.statusDistribution.map((item) => item.count), 1);
+      $('finished-status-list').innerHTML = summary.finishedGoodsWaterLevel.statusDistribution.length
+        ? summary.finishedGoodsWaterLevel.statusDistribution.map((item) =>
+            '<div class="stat-item"><div class="item-head"><span>' + item.label + '</span><span>' + item.count + ' 筆</span></div><div class="track"><div class="fill" style="width:' + Math.round((item.count / maxStatus) * 100) + '%;"></div></div></div>'
+          ).join('')
+        : '<div class="empty">目前沒有成品狀態資料</div>';
+
+      const rows = summary.finishedGoodsWaterLevel.byMachineCode;
+      const maxInventory = Math.max(...rows.map((item) => item.inventoryCount), 1);
+      const maxSold = Math.max(...rows.map((item) => item.soldCount), 1);
+
+      $('finished-water-grid').innerHTML = rows.length
+        ? rows.map((item) =>
+            '<div class="stat-item">' +
+              '<div class="item-head"><span>' + item.modelName + '</span><span>庫存 ' + item.inventoryCount + ' / 已售 ' + item.soldCount + '</span></div>' +
+              '<div class="item-sub" style="margin-bottom:8px;">機型代號：' + item.machineCode + '</div>' +
+              '<div class="item-sub">庫存</div>' +
+              '<div class="track"><div class="fill" style="width:' + Math.round((item.inventoryCount / maxInventory) * 100) + '%;"></div></div>' +
+              '<div class="item-sub" style="margin:8px 0 6px;">銷售</div>' +
+              '<div class="track"><div class="fill" style="width:' + Math.round((item.soldCount / maxSold) * 100) + '%;background:linear-gradient(90deg,var(--gold),var(--gold2));"></div></div>' +
+            '</div>'
+          ).join('')
+        : '<div class="empty">目前沒有成品庫存資料</div>';
+    }
+
+    function renderKpi(supplierName) {
+      const supplierRows = (summary.supplierPerformance || []).filter((item) => !supplierName || item.name === supplierName);
+      $('supplier-list').innerHTML = supplierRows.length
+        ? supplierRows.slice(0, 8).map((item) =>
+            '<div class="supplier-item"><div class="item-head"><span>' + item.name + '</span><span class="badge ' + (item.performance >= 85 ? 'safe' : item.performance >= 70 ? 'warn' : 'low') + '">' + item.performance + '</span></div><div class="item-sub">評分 ' + item.score + ' · 交期 ' + item.leadDays + ' 天 · 訂單 ' + item.totalOrders + ' 筆 · 到貨率 ' + (item.onTimeRate * 100).toFixed(0) + '%</div></div>'
+          ).join('')
+        : '<div class="empty">目前沒有符合條件的供應商資料</div>';
+
+      const purchaseRows = summary.purchaseStatusDistribution || [];
+      const maxCount = Math.max(...purchaseRows.map((item) => item.count), 1);
+      $('purchase-status-list').innerHTML = purchaseRows.length
+        ? purchaseRows.map((item) =>
+            '<div class="stat-item"><div class="item-head"><span>' + item.label + '</span><span>' + item.count + ' 筆</span></div><div class="track"><div class="fill" style="width:' + Math.round((item.count / maxCount) * 100) + '%;"></div></div></div>'
+          ).join('')
+        : '<div class="empty">目前沒有採購狀態資料</div>';
+
+      $('stocktake-top-list').innerHTML = summary.stocktakeMetrics.topVariance.length
+        ? summary.stocktakeMetrics.topVariance.map((item) => {
+            const rate = Math.min(Math.abs(item.diffRate || 0) * 100, 100);
+            return '<div class="variance-row">' +
+              '<div class="item-head"><span>' + item.partName + '</span><span class="badge ' + (item.diffQty === 0 ? 'safe' : item.diffQty < 0 ? 'low' : 'warn') + '">' + rate.toFixed(1) + '%</span></div>' +
+              '<div class="item-sub">' + item.partCode + ' · 系統 ' + item.systemStock + ' / 實盤 ' + item.actualStock + ' · 差異 ' + item.diffQty + '</div>' +
+            '</div>';
+          }).join('')
+        : '<div class="empty">目前沒有盤點差異明細</div>';
+
+      renderStocktakeOverviewChart();
+      renderDonut('stocktake-donut', 'stocktake-donut-legend', [
+        { label: '異常筆數', value: summary.stocktakeMetrics.abnormalCount },
+        { label: '缺件筆數', value: summary.stocktakeMetrics.missingCount },
+        { label: '正常盤點', value: Math.max(summary.stocktakeMetrics.totalCount - summary.stocktakeMetrics.abnormalCount, 0) }
+      ].filter((item) => item.value > 0));
+      renderStocktakeDetailChart();
+    }
+
+    function renderRawTable() {
+      const key = STATE.rawKey;
+      const rows = RAW[key] || [];
+      $('raw-meta').textContent = '目前檢視資料表：' + (SHEET_LABELS[key] || key) + '，共 ' + rows.length + ' 筆資料。';
+
+      if (!rows.length) {
+        $('raw-head').innerHTML = '';
+        $('raw-body').innerHTML = '<tr><td class="empty">目前沒有原始資料</td></tr>';
+        return;
+      }
+
+      const columns = Object.keys(rows[0]);
+      $('raw-head').innerHTML = '<tr>' + columns.map((column) => '<th>' + column + '</th>').join('') + '</tr>';
+      $('raw-body').innerHTML = rows.slice(0, 200).map((row) => '<tr>' + columns.map((column) => '<td>' + (row[column] ?? '') + '</td>').join('') + '</tr>').join('');
+    }
+
+    async function loadData() {
+      $('conn-status').textContent = '正在讀取庫存資料...';
+      const response = await fetch('/api/inventory/dashboard?t=' + Date.now(), { cache: 'no-store' });
+      if (!response.ok) throw new Error('庫存資料載入失敗 HTTP ' + response.status);
+
+      const data = await response.json();
+      Object.assign(RAW, data.sheets || {});
+      summary = data.summary;
+      buildFilters(summary.normalized.parts || [], summary.normalized.suppliers || []);
+      filteredParts = [...(summary.normalized.parts || [])];
+
+      $('conn-status').textContent =
+        '已同步：零件 ' + summary.cards.totalPartSku +
+        ' · 採購訂單 ' + summary.cards.purchaseOrderCount +
+        ' · 成品 ' + summary.cards.totalFinishedGoods +
+        ' · 供應商 ' + summary.cards.supplierCount;
+
+      applyFilters();
+      renderRawTable();
+    }
+
+    document.querySelectorAll('.tabs button[data-tab]').forEach((button) => {
+      button.addEventListener('click', function () {
+        STATE.tab = button.dataset.tab;
+        document.querySelectorAll('.tabs button[data-tab]').forEach((node) => node.classList.toggle('active', node === button));
+        document.querySelectorAll('.section').forEach((section) => section.classList.remove('active'));
+        $('section-' + STATE.tab).classList.add('active');
+      });
+    });
+
+    ['search', 'category', 'supplier-filter'].forEach((id) => {
+      $(id).addEventListener(id === 'search' ? 'input' : 'change', applyFilters);
+    });
+
+    $('reload-btn').addEventListener('click', function () {
+      loadData().catch((error) => {
+        $('conn-status').textContent = error.message;
+      });
+    });
+
+    loadData().catch((error) => {
+      $('conn-status').textContent = error.message;
+    });
+  </script>
 </body>
 </html>

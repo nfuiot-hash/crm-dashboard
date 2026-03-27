@@ -41,9 +41,12 @@ app.get('/login.html', (req, res) => sendPage(res, 'login.html', 'public/login.h
 app.get('/admin.html', (req, res) => sendPage(res, 'admin.html', 'public/admin.html'));
 app.get('/crm.html', (req, res) => sendPage(res, 'index.html', 'public/index.html'));
 app.get('/inventory.html', (req, res) => sendPage(res, 'inventory.html', 'public/inventory.html'));
+app.get('/quotation.html', (req, res) => sendPage(res, 'quotation.html', 'public/quotation.html'));
 
 app.use('/api/auth', require('./authRoutes'));
 app.use('/api/admin', require('./adminRoutes'));
+app.use('/api/inventory', require('./inventoryRoutes'));
+app.use('/api/quotation', require('./quotationRoutes'));
 app.use('/api', require('./crmRoutes'));
 
 app.get('/api/health', (req, res) => {
@@ -118,6 +121,7 @@ async function start() {
     console.log(`  Home:      http://localhost:${PORT}`);
     console.log(`  CRM:       http://localhost:${PORT}/crm.html`);
     console.log(`  Inventory: http://localhost:${PORT}/inventory.html`);
+    console.log(`  Quotation: http://localhost:${PORT}/quotation.html`);
     console.log(`  Login:     http://localhost:${PORT}/login.html`);
     console.log(`  Admin:     http://localhost:${PORT}/admin.html`);
     console.log(`  API:       http://localhost:${PORT}/api/health`);

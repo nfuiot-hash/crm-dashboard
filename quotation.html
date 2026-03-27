@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>報價功能系統</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: #0f1c2f;
+      --panel-2: #11243d;
+      --line: #1f3b60;
+      --text: #e9f2ff;
+      --muted: #88a4c9;
+      --gold: #ffb938;
+      --gold-2: #ff9340;
+      --cyan: #46a6ff;
+      --teal: #14d5c1;
+      --pink: #ff6d9f;
+      --shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(70, 166, 255, 0.22), transparent 28%),
+        radial-gradient(circle at top right, rgba(255, 185, 56, 0.16), transparent 25%),
+        linear-gradient(180deg, #07111f, #091423 65%, #08111d);
+      color: var(--text);
+      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    .wrap {
+      width: min(1380px, calc(100vw - 24px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+    }
+
+    .hero, .panel, .card, .table-wrap {
+      background: rgba(15, 28, 47, 0.95);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero {
+      padding: 20px 22px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .mark {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #173250, #0f2040);
+      color: var(--gold);
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+    h1 { font-size: 22px; }
+    .meta { color: var(--muted); margin-top: 4px; font-size: 13px; }
+
+    .nav {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .nav button, .btn {
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .nav button.active, .btn.primary {
+      background: linear-gradient(135deg, var(--gold), var(--gold-2));
+      color: #07111f;
+      border-color: transparent;
+    }
+
+    .panel { padding: 18px; margin-bottom: 14px; }
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field label {
+      display: block;
+      color: #bcd0ea;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .field input, .field select {
+      width: 100%;
+      border: 1px solid #34577f;
+      background: #10203a;
+      color: var(--text);
+      border-radius: 16px;
+      padding: 12px 14px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .card {
+      padding: 18px;
+      min-height: 120px;
+    }
+
+    .card .value {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .card .label {
+      color: #c5d7ef;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .card .note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .section-title {
+      font-size: 24px;
+      margin-bottom: 14px;
+    }
+
+    .subhead {
+      font-size: 18px;
+      margin-bottom: 14px;
+    }
+
+    .stat-list, .kv-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .stat-item, .kv-row {
+      padding: 14px 16px;
+      border: 1px solid #234368;
+      border-radius: 18px;
+      background: rgba(10, 23, 42, 0.7);
+    }
+
+    .stat-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: #dbe8fb;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .bar {
+      height: 8px;
+      border-radius: 999px;
+      background: #17314f;
+      overflow: hidden;
+    }
+
+    .bar > span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--teal), var(--cyan));
+    }
+
+    .kv-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .kv-label { color: var(--muted); font-size: 13px; }
+    .kv-value { font-weight: 700; }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .tabs button {
+      border: 1px solid #28476d;
+      background: transparent;
+      color: #bdd0ec;
+      border-radius: 999px;
+      padding: 9px 14px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .tabs button.active {
+      background: linear-gradient(135deg, var(--gold), var(--gold-2));
+      color: #07111f;
+      border-color: transparent;
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .table-wrap {
+      overflow: auto;
+      padding: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 820px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid rgba(60, 93, 128, 0.55);
+      text-align: left;
+      font-size: 13px;
+      vertical-align: top;
+    }
+
+    th {
+      color: #ffcf6a;
+      background: rgba(17, 36, 61, 0.92);
+      position: sticky;
+      top: 0;
+    }
+
+    td {
+      color: #e8f2ff;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(70, 166, 255, 0.16);
+      color: #8cc2ff;
+    }
+
+    .empty {
+      color: var(--muted);
+      padding: 18px 4px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 1180px) {
+      .filters, .cards, .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <script>
+    (function () {
+      const token = localStorage.getItem('crm_token');
+      if (!token) {
+        window.location.href = '/login.html';
+        return;
+      }
+
+      const rawFetch = window.fetch;
+      window.fetch = function (url, opt) {
+        opt = opt || {};
+        opt.headers = Object.assign({}, opt.headers, {
+          Authorization: 'Bearer ' + token,
+          'Cache-Control': 'no-store'
+        });
+        return rawFetch(url, opt).then(function (response) {
+          if (response.status === 401) {
+            localStorage.removeItem('crm_token');
+            localStorage.removeItem('crm_user');
+            window.location.href = '/login.html';
+          }
+          return response;
+        });
+      };
+    })();
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="brand">
+        <div class="mark">報</div>
+        <div>
+          <h1>報價功能系統</h1>
+          <div id="heroMeta" class="meta">載入報價、成本、毛利與損益分析資料中...</div>
+        </div>
+      </div>
+      <div class="nav">
+        <button class="active">總覽</button>
+        <button onclick="activateView('quotation')">報價分析</button>
+        <button onclick="activateView('cost')">成本明細</button>
+        <button onclick="activateView('raw')">原始資料</button>
+        <button onclick="window.location.href='/'">返回首頁</button>
+        <button onclick="window.location.href='/crm.html'">返回 CRM</button>
+        <button onclick="loadDashboard()">重新載入</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="filters">
+        <div class="field">
+          <label for="searchInput">搜尋</label>
+          <input id="searchInput" type="text" placeholder="報價單號、客戶、產品、圖號">
+        </div>
+        <div class="field">
+          <label for="statusSelect">報價狀態</label>
+          <select id="statusSelect"></select>
+        </div>
+        <div class="field">
+          <label for="customerSelect">客戶</label>
+          <select id="customerSelect"></select>
+        </div>
+        <div class="field">
+          <label for="rawSelect">資料表</label>
+          <select id="rawSelect"></select>
+        </div>
+      </div>
+    </div>
+
+    <div id="cards" class="cards"></div>
+
+    <div id="view-overview" class="view active">
+      <div class="layout">
+        <div class="stack">
+          <div class="panel">
+            <h2 class="section-title">報價摘要</h2>
+            <div id="quoteMeta" class="kv-list"></div>
+          </div>
+          <div class="panel">
+            <h3 class="subhead">客戶報價金額分布</h3>
+            <div id="customerAmount" class="stat-list"></div>
+          </div>
+        </div>
+        <div class="stack">
+          <div class="panel">
+            <h3 class="subhead">報價狀態分布</h3>
+            <div id="statusDistribution" class="stat-list"></div>
+          </div>
+          <div class="panel">
+            <h3 class="subhead">損益平衡指標</h3>
+            <div id="breakEvenMetrics" class="kv-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="layout">
+        <div class="panel">
+          <h3 class="subhead">成本類別分布</h3>
+          <div id="costDistribution" class="stat-list"></div>
+        </div>
+        <div class="panel">
+          <h3 class="subhead">製程類別分布</h3>
+          <div id="processDistribution" class="stat-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-quotation" class="view">
+      <div class="tabs">
+        <button class="active" onclick="switchQuoteTab('analysis', event)">報價分析</button>
+        <button onclick="switchQuoteTab('items', event)">報價項目</button>
+        <button onclick="switchQuoteTab('history', event)">歷史統計</button>
+      </div>
+      <div id="quote-tab-analysis" class="table-wrap"></div>
+      <div id="quote-tab-items" class="table-wrap" style="display:none;"></div>
+      <div id="quote-tab-history" class="table-wrap" style="display:none;"></div>
+    </div>
+
+    <div id="view-cost" class="view">
+      <div class="tabs">
+        <button class="active" onclick="switchCostTab('costs', event)">成本項目</button>
+        <button onclick="switchCostTab('materials', event)">物料分析</button>
+        <button onclick="switchCostTab('process', event)">製程分析</button>
+        <button onclick="switchCostTab('margin', event)">毛利率設定</button>
+      </div>
+      <div id="cost-tab-costs" class="table-wrap"></div>
+      <div id="cost-tab-materials" class="table-wrap" style="display:none;"></div>
+      <div id="cost-tab-process" class="table-wrap" style="display:none;"></div>
+      <div id="cost-tab-margin" class="table-wrap" style="display:none;"></div>
+    </div>
+
+    <div id="view-raw" class="view">
+      <div class="panel" style="margin-bottom:14px;">
+        <div id="rawSummary" class="meta"></div>
+      </div>
+      <div id="rawTable" class="table-wrap"></div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      dashboard: null,
+      quotations: [],
+      raw: {},
+      quoteTab: 'analysis',
+      costTab: 'costs',
+      view: 'overview'
+    };
+
+    function formatNumber(value) {
+      const numeric = Number(value || 0);
+      if (!Number.isFinite(numeric)) return value || '-';
+      return numeric.toLocaleString('zh-TW');
+    }
+
+    function formatAmount(value) {
+      const numeric = Number(value || 0);
+      if (!Number.isFinite(numeric)) return value || '-';
+      if (Math.abs(numeric) >= 10000) return (numeric / 10000).toFixed(1) + '萬';
+      return numeric.toLocaleString('zh-TW');
+    }
+
+    function formatPercent(value) {
+      const numeric = Number(value || 0);
+      if (!Number.isFinite(numeric)) return value || '-';
+      return (numeric * 100).toFixed(1) + '%';
+    }
+
+    function uniqueOptions(rows, key) {
+      return ['全部'].concat(Array.from(new Set(rows.map(row => String(row[key] || '').trim()).filter(Boolean))).sort());
+    }
+
+    function renderSelect(selectId, options) {
+      const select = document.getElementById(selectId);
+      select.innerHTML = options.map(option => '<option value="' + option + '">' + option + '</option>').join('');
+    }
+
+    function getFilteredQuotations() {
+      const search = document.getElementById('searchInput').value.trim().toLowerCase();
+      const status = document.getElementById('statusSelect').value;
+      const customer = document.getElementById('customerSelect').value;
+      const rows = state.dashboard?.sheets?.quotationAnalysis?.quotations || [];
+
+      return rows.filter((row) => {
+        if (status && status !== '全部' && row['報價狀態'] !== status) return false;
+        if (customer && customer !== '全部' && row['客戶名稱'] !== customer) return false;
+        if (!search) return true;
+        return [
+          row['報價單號'],
+          row['客戶名稱'],
+          row['產品名稱'],
+          row['圖號'],
+        ].some((value) => String(value || '').toLowerCase().includes(search));
+      });
+    }
+
+    function renderCards() {
+      const summary = state.dashboard.summary.cards;
+      const cards = [
+        ['報價單數', summary.quotationCount, '目前分析中的報價案件'],
+        ['總報價金額', formatAmount(summary.totalAmount), '依報價分析表估算'],
+        ['平均毛利率', formatPercent(summary.avgMargin), '以報價分析表為主'],
+        ['成本項目', summary.costItemCount, '成本設定明細筆數'],
+        ['製程步驟', summary.processStepCount, '製程分析工序'],
+        ['物料筆數', summary.materialCount, '製程物料分析'],
+      ];
+      document.getElementById('cards').innerHTML = cards.map((card, index) => (
+        '<div class="card">' +
+          '<div class="value" style="color:' + ['#46a6ff', '#ffb938', '#9d7cff', '#14d5c1', '#ff6d9f', '#ff9340'][index % 6] + ';">' + card[1] + '</div>' +
+          '<div class="label">' + card[0] + '</div>' +
+          '<div class="note">' + card[2] + '</div>' +
+        '</div>'
+      )).join('');
+    }
+
+    function renderStatList(targetId, items, valueKey, formatter) {
+      const target = document.getElementById(targetId);
+      if (!items.length) {
+        target.innerHTML = '<div class="empty">目前沒有可顯示的資料</div>';
+        return;
+      }
+      const max = Math.max(...items.map(item => Number(item[valueKey] || 0)), 1);
+      target.innerHTML = items.map((item) => {
+        const value = Number(item[valueKey] || 0);
+        const percent = Math.max(8, Math.round((value / max) * 100));
+        return (
+          '<div class="stat-item">' +
+            '<div class="stat-line"><span>' + item.label + '</span><strong>' + formatter(value) + '</strong></div>' +
+            '<div class="bar"><span style="width:' + percent + '%;"></span></div>' +
+          '</div>'
+        );
+      }).join('');
+    }
+
+    function renderKeyValues(targetId, entries, formatter) {
+      const target = document.getElementById(targetId);
+      const rows = Object.entries(entries || {}).filter(([, value]) => String(value).trim() !== '');
+      if (!rows.length) {
+        target.innerHTML = '<div class="empty">目前沒有可顯示的資料</div>';
+        return;
+      }
+      target.innerHTML = rows.map(([key, value]) => (
+        '<div class="kv-row">' +
+          '<div class="kv-label">' + key + '</div>' +
+          '<div class="kv-value">' + (formatter ? formatter(key, value) : value) + '</div>' +
+        '</div>'
+      )).join('');
+    }
+
+    function renderTable(targetId, rows, columns) {
+      const target = document.getElementById(targetId);
+      if (!rows.length) {
+        target.innerHTML = '<div class="empty">目前沒有可顯示的資料</div>';
+        return;
+      }
+      const headers = columns || Object.keys(rows[0]);
+      const html = [
+        '<table>',
+        '<thead><tr>',
+        headers.map((header) => '<th>' + header + '</th>').join(''),
+        '</tr></thead>',
+        '<tbody>',
+        rows.map((row) => (
+          '<tr>' + headers.map((header) => {
+            const value = row[header];
+            return '<td>' + (value === '' || value == null ? '-' : value) + '</td>';
+          }).join('') + '</tr>'
+        )).join(''),
+        '</tbody></table>'
+      ].join('');
+      target.innerHTML = html;
+    }
+
+    function renderOverview() {
+      const data = state.dashboard.sheets;
+      const summary = state.dashboard.summary;
+      const form = data.quotationForm;
+
+      document.getElementById('heroMeta').textContent =
+        '已同步：報價 ' + summary.cards.quotationCount +
+        '、成本項目 ' + summary.cards.costItemCount +
+        '、製程步驟 ' + summary.cards.processStepCount +
+        '、歷史資料 ' + summary.cards.historyCount;
+
+      renderKeyValues('quoteMeta', {
+        '報價單號': form.meta.quotationNo,
+        '客戶名稱': form.meta.customerName,
+        '聯絡人': form.meta.contact,
+        '報價日期': form.meta.quotationDate,
+        '有效期限': form.meta.validUntil,
+        '付款條件': form.meta.paymentTerms,
+        '小計': formatAmount(form.totals.subtotal),
+        '稅額': formatAmount(form.totals.tax),
+        '總計(含稅)': formatAmount(form.totals.grandTotal)
+      });
+
+      renderStatList('customerAmount', summary.customerAmount, 'amount', formatAmount);
+      renderStatList('statusDistribution', summary.statusDistribution, 'count', formatNumber);
+      renderStatList('costDistribution', summary.costCategories, 'amount', formatAmount);
+      renderStatList('processDistribution', summary.processCategories, 'count', formatNumber);
+      renderKeyValues('breakEvenMetrics', data.breakEven.metrics, function (key, value) {
+        if (String(key).includes('毛利率')) return formatPercent(value);
+        if (String(key).includes('件數')) return formatNumber(value);
+        return formatAmount(value);
+      });
+    }
+
+    function renderQuotationViews() {
+      const data = state.dashboard.sheets;
+      renderTable('quote-tab-analysis', getFilteredQuotations());
+      renderTable('quote-tab-items', data.quotationForm.items);
+      renderTable('quote-tab-history', data.historyStats.quotationHistory);
+    }
+
+    function renderCostViews() {
+      const data = state.dashboard.sheets;
+      renderTable('cost-tab-costs', data.costSettings.costItems);
+      renderTable('cost-tab-materials', data.processAnalysis.materials);
+      renderTable('cost-tab-process', data.processAnalysis.processSteps);
+      renderTable('cost-tab-margin', data.marginSettings.targets);
+    }
+
+    function renderRawView() {
+      const key = document.getElementById('rawSelect').value || 'quotation_analysis';
+      const rows = state.dashboard.sheets.raw[key] || [];
+      document.getElementById('rawSummary').textContent = '目前顯示資料表：' + key + '，共 ' + rows.length + ' 列原始資料。';
+      const mapped = rows.map((row) => {
+        const obj = {};
+        row.forEach((value, index) => { obj['欄位' + (index + 1)] = value; });
+        return obj;
+      });
+      renderTable('rawTable', mapped);
+    }
+
+    function activateView(view) {
+      state.view = view;
+      ['overview', 'quotation', 'cost', 'raw'].forEach((name) => {
+        document.getElementById('view-' + name).classList.toggle('active', name === view);
+      });
+      document.querySelectorAll('.nav button').forEach((button) => {
+        button.classList.toggle('active', button.textContent.includes(
+          view === 'overview' ? '總覽' :
+          view === 'quotation' ? '報價分析' :
+          view === 'cost' ? '成本明細' : '原始資料'
+        ));
+      });
+      if (view === 'raw') renderRawView();
+    }
+
+    function switchQuoteTab(tab, event) {
+      state.quoteTab = tab;
+      document.querySelectorAll('#view-quotation .tabs button').forEach((button) => button.classList.remove('active'));
+      event.target.classList.add('active');
+      ['analysis', 'items', 'history'].forEach((name) => {
+        document.getElementById('quote-tab-' + name).style.display = name === tab ? 'block' : 'none';
+      });
+    }
+
+    function switchCostTab(tab, event) {
+      state.costTab = tab;
+      document.querySelectorAll('#view-cost .tabs button').forEach((button) => button.classList.remove('active'));
+      event.target.classList.add('active');
+      ['costs', 'materials', 'process', 'margin'].forEach((name) => {
+        document.getElementById('cost-tab-' + name).style.display = name === tab ? 'block' : 'none';
+      });
+    }
+
+    async function loadDashboard() {
+      document.getElementById('heroMeta').textContent = '正在更新報價資料...';
+      const response = await fetch('/api/quotation/dashboard?_=' + Date.now());
+      if (!response.ok) {
+        throw new Error('報價資料載入失敗 HTTP ' + response.status);
+      }
+      state.dashboard = await response.json();
+      renderSelect('statusSelect', uniqueOptions(state.dashboard.sheets.quotationAnalysis.quotations, '報價狀態'));
+      renderSelect('customerSelect', uniqueOptions(state.dashboard.sheets.quotationAnalysis.quotations, '客戶名稱'));
+      renderSelect('rawSelect', Object.keys(state.dashboard.sheets.raw || {}));
+      renderCards();
+      renderOverview();
+      renderQuotationViews();
+      renderCostViews();
+      renderRawView();
+    }
+
+    document.getElementById('searchInput').addEventListener('input', function () {
+      renderQuotationViews();
+    });
+    document.getElementById('statusSelect').addEventListener('change', function () {
+      renderQuotationViews();
+    });
+    document.getElementById('customerSelect').addEventListener('change', function () {
+      renderQuotationViews();
+    });
+    document.getElementById('rawSelect').addEventListener('change', function () {
+      renderRawView();
+    });
+
+    loadDashboard().catch(function (error) {
+      document.getElementById('heroMeta').textContent = error.message;
+    });
+  </script>
+</body>
+</html>
